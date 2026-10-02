@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16264a">
+<meta name="application-name" content="Калькулятор FI">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Калькулятор FI">
+<meta name="format-detection" content="telephone=no">
+<title>Family Island — рецепты: ресурсы, энергия, рубины</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2316264a'/%3E%3Crect x='29' y='14' width='7' height='38' rx='3' fill='%23a4703a' transform='rotate(12 32 33)'/%3E%3Cpath d='M34 16 L54 22 L50 36 L36 31 Z' fill='%23ffc93c'/%3E%3Cpath d='M34 16 L54 22 L52 27 L35 22 Z' fill='%23ffe9a3'/%3E%3C/svg%3E">
+<style>
+:root{
+  --panel:#1b2c4d;--panel2:#22365e;--line:#2f4a7a;--txt:#e8f0ff;--dim:#9db2d6;
+  --acc:#ffc93c;--acc2:#4cd97b;--craft:#c79bff;--bad:#ff8f8f;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",Roboto,Arial,sans-serif;background:linear-gradient(160deg,#0e1a30,#16264a 60%,#101d38);color:var(--txt);min-height:100vh}
+header{padding:12px 16px 8px;text-align:center;background:radial-gradient(circle at 50% 0,#2a4a86,#12203a 70%);border-bottom:2px solid var(--line)}
+h1{margin:0;font-size:20px}
+h1 span{font-size:23px}
+.sub{color:var(--dim);font-size:12px;margin-top:2px}
+.wrap{max-width:1240px;margin:0 auto;padding:12px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.box h2{margin:0 0 8px;font-size:15px;display:flex;gap:7px;align-items:center}
+.note{color:var(--dim);font-size:12px;margin:6px 0 0;line-height:1.5}
+.note b{color:var(--txt)}
+
+.setbar{display:flex;flex-wrap:wrap;gap:9px 16px;align-items:center;font-size:13px}
+.setbar label{color:var(--dim);display:flex;align-items:center;gap:6px}
+input[type=number],input[type=text]{background:#0e1a30;border:1px solid var(--line);color:var(--txt);border-radius:7px;padding:5px 7px;font-size:13px}
+input[type=number]{width:66px;text-align:right}
+input:focus,select:focus{outline:none;border-color:var(--acc)}
+select{background:#0e1a30;border:1px solid var(--line);color:var(--txt);border-radius:7px;padding:5px 7px;font-size:13px}
+button{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer}
+button:hover{background:#2c4679;border-color:var(--acc)}
+button.primary{background:var(--acc);color:#241a00;border-color:var(--acc);font-weight:700}
+button.del{background:transparent;border:1px solid transparent;color:#ff8f8f;padding:1px 6px}
+button.del:hover{background:rgba(255,0,0,.14);border-color:#ff8f8f}
+.muted{color:var(--dim);font-size:12px}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;margin-bottom:10px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.card .lbl{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px}
+.card .val{font-size:25px;font-weight:800;margin-top:2px;color:var(--acc)}
+.card .hint{font-size:11px;color:var(--dim);margin-top:2px}
+.card.v .val{color:var(--craft)}
+.card.g .val{color:var(--acc2)}
+.card.b .val{color:#7fd8ff}
+
+.vbar{background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:14px}
+.vbar b{color:var(--acc)}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{background:var(--panel2);color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tot{font-weight:800;color:var(--acc);background:rgba(255,201,60,.09)}
+.good{color:var(--acc2);font-weight:700}
+.res{display:inline-flex;align-items:center;gap:6px}
+.ico{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.07);border-radius:6px;font-size:14px;line-height:1;flex:none}
+.scroll{overflow-x:auto}
+
+.ov{width:66px;background:#0e1a30;border:1px solid var(--line);color:var(--txt);border-radius:7px;padding:4px 6px;font-size:13px;text-align:right}
+.ov:focus{outline:none;border-color:var(--acc)}
+.ov.on{border-color:var(--acc);color:var(--acc);font-weight:700}
+.ov.done.on{border-color:var(--acc2);color:var(--acc2)}
+.clr{background:transparent;border:1px solid var(--line);color:#ff9a9a;border-radius:5px;padding:0 5px;margin-left:3px;font-size:10px;cursor:pointer}
+.rname{width:132px;font-weight:600}
+.packs{font-size:12px;color:var(--dim);white-space:nowrap}
+.packs b{color:var(--txt)}
+.bar{display:block;width:62px;height:4px;background:rgba(255,255,255,.09);border-radius:3px;margin:3px 0 2px auto;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#4cd97b,#ffc93c)}
+
+.item{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.item-head{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:8px}
+.item-head .nm{min-width:195px;font-weight:700}
+.item-head .qt{width:74px;color:var(--acc);font-weight:700}
+.item-head .rb{width:74px;color:#ff9bb8}
+.item-head .sp{flex:1}
+.ing-head,.ing-row{display:grid;grid-template-columns:1fr 74px 78px 62px 24px;gap:6px;align-items:center}
+.ing-head{font-size:10px;text-transform:uppercase;color:var(--dim);padding-bottom:3px}
+.ing-row{margin-bottom:5px}
+.ing-row input[type=number]{width:100%}
+.ing-row .rwrap input{width:100%;min-width:0}
+.ing-row .cell{text-align:right;font-size:13px;color:var(--dim)}
+.res-line{background:rgba(0,0,0,.22);border:1px solid var(--line);border-radius:8px;padding:7px 10px;margin-top:8px;font-size:12.5px;line-height:1.75}
+.res-line .dim{color:var(--dim)}
+.res-line .g{color:var(--acc2);font-weight:700}
+.res-line b{color:var(--acc)}
+
+.cols{display:grid;grid-template-columns:minmax(430px,1fr) minmax(0,1.3fr);gap:12px;align-items:start}
+.cols .box{margin-bottom:0}
+@media(max-width:1020px){.cols{grid-template-columns:1fr}.cols .box{margin-bottom:12px}}
+.pl{margin-top:3px;line-height:1.65}
+.pl:first-child{margin-top:0}
+.pl b{color:var(--acc)}
+.pl .g{color:var(--acc2);font-weight:700}
+.pl .dim{color:var(--dim)}
+.pl .bad{color:var(--bad);font-weight:700}
+
+/* --- цвета ресурсов вместо эмодзи --- */
+.chip{width:14px;min-width:14px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,.45);padding:0;cursor:pointer;background:#4a5a7a}
+.chip:hover{filter:brightness(1.25)}
+.rwrap{display:flex;align-items:center;gap:6px;position:relative}
+.rn{font-weight:700;white-space:nowrap}
+
+/* --- выпадающий список ресурсов (свой, работает и на телефоне) --- */
+.rwrap .ddbtn{position:absolute;right:3px;top:50%;transform:translateY(-50%);background:var(--panel2);border:1px solid var(--line);color:var(--dim);border-radius:6px;font-size:9px;line-height:1;padding:6px 5px;cursor:pointer}
+.rwrap .ddbtn:hover,.rwrap .ddbtn:focus{border-color:var(--acc);color:var(--acc)}
+.ing-row .rwrap input{padding-right:26px}
+#ddbox{position:fixed;z-index:999;display:none;background:var(--panel2);border:1px solid var(--line);border-radius:9px;box-shadow:0 12px 30px rgba(0,0,0,.6);max-height:200px;overflow:auto;padding:4px}
+#ddbox .ddi{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--txt)}
+#ddbox .ddi span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ddbox .ddi.on,#ddbox .ddi:hover{background:rgba(76,217,123,.16);color:var(--acc)}
+#ddbox .ddi i{width:11px;height:11px;border-radius:3px;flex:none}
+#ddbox .ddnone{color:var(--dim);font-size:12px;padding:8px 9px}
+
+/* --- стрелки вверх/вниз для чисел (показываются на телефоне) --- */
+.stp{display:none}
+
+/* --- таблица вариантов в рецепте --- */
+.vt{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:5px}
+.vt th,.vt td{padding:4px 7px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.vt th{background:rgba(0,0,0,.28);font-size:10px;letter-spacing:.3px}
+.vt td.num,.vt th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.vt tr.best td{background:rgba(76,217,123,.10)}
+.vt tr.best td:first-child{box-shadow:inset 3px 0 0 var(--acc2)}
+.vt .rescell{color:var(--dim)}
+.vt .sub{font-size:10.5px;color:var(--dim);font-weight:400;letter-spacing:.2px}
+.vt .vname{font-weight:700;color:var(--txt)}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:9px}
+.toolbar .sp{flex:1}
+.save{font-size:12px;color:var(--acc2);min-height:16px}
+footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
+
+/* ---- не даём колонкам распирать страницу ---- */
+.cols>*{min-width:0}
+
+/* ============ телефон ============ */
+@media(max-width:760px){
+  header{padding:8px 8px 6px}
+  h1{font-size:15px;line-height:1.35}
+  h1 span{font-size:16px}
+  .sub{font-size:11px}
+  .wrap{padding:8px}
+  .box{padding:9px 8px;border-radius:10px}
+  .box h2{font-size:14px;flex-wrap:wrap;gap:6px}
+  .box h2 button{padding:6px 8px}
+  .note{font-size:11.5px;line-height:1.5}
+  .setbar{gap:6px 12px;font-size:12px}
+  input[type=number],input[type=text],select,.ov,.rname{font-size:16px}
+  input[type=number]{width:62px}
+  .ov{width:76px}
+  .vbar{font-size:12.5px;padding:8px 9px}
+  .cols{grid-template-columns:1fr}
+  footer{font-size:10.5px;padding-bottom:34px}
+
+  /* кнопки шапки рецептов */
+  .toolbar{gap:6px}
+  .toolbar .sp{display:none}
+  .toolbar button{flex:1 1 84px;text-align:center;padding:8px 6px}
+  .item-head{gap:6px}
+  .item-head .nm{min-width:0;flex:1 1 100%;font-size:16px}
+  .item-head .sp{display:none}
+  .item{padding:9px 8px}
+
+  /* таблица ресурсов — карточками */
+  #tSum thead{display:none}
+  #tSum,#tSum tbody,#tSum tfoot{display:block;width:100%}
+  #tSum tr{display:block;border:1px solid var(--line);border-radius:9px;background:var(--panel2);padding:4px 7px;margin-bottom:5px}
+  #tSum tr.tot{background:rgba(255,201,60,.09);border-color:var(--acc)}
+  #tSum td{display:flex;align-items:center;justify-content:space-between;gap:6px;border:none;padding:2px 0;text-align:left}
+  #tSum td::before{content:attr(data-l);color:var(--dim);font-size:11px;text-transform:none;letter-spacing:0;flex:none}
+  #tSum td:first-child::before{content:""}
+  #tSum td:first-child{padding-bottom:5px;border-bottom:1px solid var(--line);margin-bottom:2px}
+  #tSum td:last-child{justify-content:flex-end;padding-top:1px}
+  #tSum td:last-child::before{content:none}
+  #tSum .rwrap{width:100%;min-width:0}
+  #tSum .rname{width:100%;min-width:0}
+  .bar{width:48px;margin:0 0 0 auto}
+  #tSum td.num{text-align:right}
+  #tSum td.num::before{align-self:center}
+
+  /* строки ингредиентов — карточками */
+  .ing-head{display:none}
+  .ing-row{grid-template-columns:1fr 1fr;gap:5px 8px;padding:6px;border:1px solid var(--line);border-radius:9px;background:rgba(0,0,0,.15);margin-bottom:6px}
+  .ing-row .rwrap{grid-column:1/-1;min-width:0}
+  .ing-row .fld,.ing-row .cell{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0}
+  .ing-row .fld::before,.ing-row .cell::before{content:attr(data-l);color:var(--dim);font-size:11px}
+  .ing-row .cell{text-align:right}
+  .ing-row input[type=number]{width:78px}
+  .ing-row .del{justify-self:end;align-self:center;padding:4px 8px}
+
+  /* стрелки вверх/вниз для чисел и кнопка списка ресурсов */
+  .stp{display:inline-flex;flex-direction:row;gap:3px;flex:none;margin-left:4px}
+  .stp b{display:block;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:6px;min-width:31px;min-height:25px;font-size:11px;line-height:1;padding:4px 6px;text-align:center;cursor:pointer;user-select:none;-webkit-user-select:none}
+  .stp b:active{background:var(--acc);color:#101a30}
+  .ing-row .fld input{margin-left:auto}
+  #tSum td .ov{margin-left:auto}
+  .rwrap .ddbtn{padding:10px 7px;font-size:11px}
+  .res-line{padding:7px 8px;font-size:12.5px;overflow-wrap:anywhere}
+
+  /* таблица двух вариантов — карточками */
+  .vt,.vt tbody,.vt tr,.vt td{display:block;width:100%}
+  .vt thead,.vt tr.vth{display:none}
+  .vt tr{border:1px solid var(--line);border-radius:9px;padding:6px 8px;margin-bottom:7px;background:rgba(0,0,0,.16)}
+  .vt tr.best{border-color:var(--acc2);background:rgba(76,217,123,.10)}
+  .vt tr.best td:first-child{box-shadow:none}
+  .vt td{border:none;padding:2px 0}
+  .vt td.num{display:flex;justify-content:space-between;gap:8px;text-align:right}
+  .vt td.num::before{content:attr(data-l);color:var(--dim);font-weight:400;text-align:left}
+  .vt .vname{font-size:13px;color:var(--acc)}
+  .vt .rescell{margin:2px 0 4px}
+  .vt .rn{white-space:normal}
+}
+
+@media(max-width:400px){
+  .setbar{flex-direction:column;align-items:stretch;gap:5px}
+  .setbar label{justify-content:flex-start}
+  .toolbar button{flex:1 1 70px;font-size:11.5px}
+}
+
+@media print{
+  body{background:#fff;color:#000}
+  .toolbar,button,#ddbox,.stp{display:none!important}
+  .box,.card,.item,.vbar,.res-line{border:1px solid #999;background:#fff}
+  th{background:#eee;color:#000}
+  .tot,.good,.card .val,.res-line b,.res-line .g{color:#000}
+  .ov,.rname,input{border:1px solid #999;background:#fff;color:#000}
+  .muted,.card .hint,.card .lbl,.note{color:#444}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span>🏝️</span> Family Island — рецепты и стоимость</h1>
+  <div class="sub">Сколько стоит рецепт в энергии и рубинах — и чем закрывать выгоднее</div>
+</header>
+
+<div class="wrap">
+
+  <!-- ===== НАСТРОЙКИ ===== -->
+  <div class="box">
+    <div class="setbar">
+      <label>Пачка <input type="number" id="setPack" min="1" value="3"></label>
+      <label>буст +<input type="number" id="setBoost" min="0" value="1"></label>
+      <span class="muted">→ вместо 3 даёт 4</span>
+      <label>Режим <select id="setMode">
+        <option value="exact">без лишних (пачки + остаток по 1)</option>
+        <option value="waste">только пачками</option>
+        <option value="single">поштучно</option>
+      </select></label>
+      <label>Курс <input type="number" id="setCr" min="1" value="100">💎 = <input type="number" id="setCe" min="1" value="1200">⚡</label>
+      <span class="muted" id="epcTxt"></span>
+    </div>
+  </div>
+
+  <div class="vbar" id="vbar"></div>
+
+  <div class="cols">
+
+  <!-- ===== ЛЕВАЯ КОЛОНКА: РЕСУРСЫ И ЦЕНЫ ===== -->
+  <div class="box">
+    <h2>
+      <span>🧾 Ресурсы и цены</span>
+      <span style="flex:1"></span>
+      <button class="primary" id="btnAddRes" title="Добавить отдельный ресурс, которого нет в рецептах">➕ Ресурс</button>
+      <button id="btnShowHidden" style="display:none" title="Вернуть ресурсы, скрытые кнопкой 🗑">👁 скрытые</button>
+    </h2>
+    <p class="note">Вбейте <b>все ресурсы</b> и укажите <b>⚡ сколько стоит 1 шт.</b> Квадратик слева — <b>цвет ресурса</b> (нажмите, чтобы поменять), он же будет в рецептах. Название правится прямо в таблице — оно поменяется и в рецептах.
+      🗑 — убрать лишнее (ресурсы из рецептов прячутся, вернуть можно кнопкой «👁 скрытые»).</p>
+    <div class="scroll">
+      <table id="tSum">
+        <thead><tr>
+          <th>Ресурс</th>
+          <th class="num">⚡ за 1 шт.</th>
+          <th class="num">Нужно ✏️</th>
+          <th class="num">Собрано</th>
+          <th class="num">Осталось</th>
+          <th class="num"></th>
+        </tr></thead>
+        <tbody></tbody>
+        <tfoot></tfoot>
+      </table>
+    </div>
+    <div class="vbar" id="sumBar" style="margin-bottom:0"></div>
+  </div>
+
+  <!-- ===== ПРАВАЯ КОЛОНКА: РЕЦЕПТЫ ===== -->
+  <div class="box">
+    <h2>🏭 Рецепты — считаем здесь</h2>
+    <p class="note">Впишите изделие, сколько его нужно и из чего оно делается — дальше считается само. Два варианта:
+      <b>топор + мастерская 3×4</b> и <b>топор без мастерской</b> — по каждому видно, сколько собрать, сколько уйдёт энергии и сколько это в рубинах.</p>
+    <div class="toolbar">
+      <button class="primary" id="btnAddItem">➕ Добавить изделие</button>
+      <span class="sp"></span>
+      <button id="btnPrint">🖨️ Печать</button>
+      <button id="btnExport">💾 Экспорт</button>
+      <button id="btnImport">📂 Импорт</button>
+      <button id="btnReset">↺ Пример</button>
+      <input type="file" id="fileIn" accept=".json" style="display:none">
+    </div>
+    <div class="save" id="saveMsg"></div>
+    <div id="items"></div>
+    <div class="vbar" id="totalBar" style="margin-bottom:0"></div>
+  </div>
+
+  </div><!-- /cols -->
+
+  <footer>Все данные хранятся только в вашем браузере.</footer>
+</div>
+
+<datalist id="dlRes"></datalist>
+
+<script>
+/* ============ цвета ресурсов (вместо эмодзи) ============ */
+const PAL = ["#ff6b6b","#ffc93c","#5ad1ff","#4cd97b","#c79bff","#ff9bb8","#ffb26b","#8fe36b","#7fa8ff","#ff7fd0","#5ce1c7","#e9e96b"];
+function colorOf(key){
+  if(!st.col) st.col = {};
+  if(!key) return "#7f8db0";
+  if(st.col[key] === undefined){
+    const used = new Set(Object.keys(st.col).map(k=>st.col[k]));
+    let i = 0;
+    while(used.has(i) && i < PAL.length) i++;
+    st.col[key] = i % PAL.length;
+    colorOf.dirty = true;
+  }
+  return PAL[st.col[key] % PAL.length];
+}
+function cycleColor(key){
+  if(!key) return;
+  if(!st.col) st.col = {};
+  if(st.col[key] === undefined) colorOf(key);
+  st.col[key] = (st.col[key] + 1) % PAL.length;
+  save(); update();
+}
+const rn = (name, extra) => `<span class="rn" style="color:${colorOf(keyOf(name))}">${escapeAttr(name)}</span>${extra||""}`;
+
+/* ============ состояние ============ */
+const LS = "fi_recipe_calc_v2";
+/* Стартовый набор — реальные данные владельца файла.
+   Он подставляется на любом новом устройстве (когда своя память пуста)
+   и загружается кнопкой «↺ Пример». */
+const DEFAULT = {
+  pack:3, boost:1, mode:"exact", cr:100, ce:1200,
+  ov:{"маска":"71"}, done:{},
+  en:{"перья":"133","красные стаканчики":"102","цветные палочки":"118",
+      "колонка":"166","блёстки":67,"маска":71},
+  manual:["Маска","Блёстки"], hidden:{},
+  col:{"красные стаканчики":0,"цветные палочки":1,"перья":2,"колонка":3,
+       "угли":4,"маска":5,"блёстки":6},
+  items:[
+    {name:"Фестивальный стакан", qty:26, rub:0, batch:true,
+     ing:[{name:"Красные стаканчики", per:12},{name:"Цветные палочки", per:12}]},
+    {name:"Огненный веер", qty:"37", rub:0, batch:true,
+     ing:[{name:"Перья", per:"12"},{name:"Колонка", per:"9"},{name:"Угли", per:"8"}]},
+    {name:"Пустынная маска", qty:"71", rub:0, batch:true,
+     ing:[{name:"Маска", per:"7"},{name:"Блёстки", per:"5"}]}
+  ],
+  only:true
+};
+let st;
+
+function load(){
+  try{
+    const raw = localStorage.getItem(LS);
+    if(raw){ const p = JSON.parse(raw); if(p && Array.isArray(p.items)){ st = Object.assign({}, DEFAULT, p); return; } }
+    const old = localStorage.getItem("fi_recipe_calc_v1");
+    if(old){ const p = JSON.parse(old); if(p && Array.isArray(p.items)){
+      st = Object.assign({}, DEFAULT, p);
+      if(!st.mode) st.mode = (p.only === false ? "single" : "exact");
+      st.ov = {}; st.done = {}; st.en = {};
+      return;
+    }}
+  }catch(e){}
+  st = JSON.parse(JSON.stringify(DEFAULT));
+}
+function save(msg){
+  try{
+    localStorage.setItem(LS, JSON.stringify(st));
+    if(msg){ const el = document.getElementById("saveMsg"); el.textContent = "✅ " + msg;
+      clearTimeout(save._t); save._t = setTimeout(()=>el.textContent = "", 2200); }
+  }catch(e){}
+}
+
+/* ============ расчёт ============ */
+const ci = n => Math.max(0, parseInt(n,10)||0);
+const keyOf = n => (n||"").trim().toLowerCase();
+const epc = () => Math.max(1, ci(st.ce)) / Math.max(1, ci(st.cr));   // энергия за 1 рубин
+const rubyOf = e => Math.round(e / epc());
+const modeNow = () => st.mode || "exact";
+
+function itemCalc(it){
+  const P = Math.max(1, st.pack), B = Math.max(0, st.boost), Y = P + B;
+  const qty = ci(it.qty), mode = modeNow();
+  if(mode === "single" || qty === 0)
+    return {qty, mode:"single", bNo:0, singlesNo:0, madeNo:qty,
+            bYes:0, singlesYes:0, madeYes:qty, gotYes:qty};
+  if(mode === "exact"){
+    const bNo = Math.floor(qty/P), remNo = qty - bNo*P;
+    const bYes = Math.floor(qty/Y), remYes = qty - bYes*Y;
+    return {qty, mode:"exact", bNo, singlesNo:remNo, madeNo:bNo*P+remNo,
+            bYes, singlesYes:remYes, madeYes:bYes*P+remYes, gotYes:qty};
+  }
+  const bNo = Math.ceil(qty/P), bYes = Math.ceil(qty/Y);
+  return {qty, mode:"waste", bNo, singlesNo:0, madeNo:bNo*P,
+          bYes, singlesYes:0, madeYes:bYes*P, gotYes:bYes*Y};
+}
+
+function planResource(need, per, mode){
+  const P = Math.max(1, st.pack), B = Math.max(0, st.boost), Y = P + B;
+  need = Math.max(0, need); per = Math.max(1, per || 1);
+  if(mode === "single" || need === 0)
+    return {packsNo:0, spendNo:need, packsYes:0, spendYes:need};
+  if(mode === "exact"){
+    const packsYes = Math.floor(need/(per*Y));
+    return {packsNo:Math.floor(need/(per*P)), spendNo:need,
+            packsYes, spendYes:need - B*per*packsYes};
+  }
+  const packsNo = Math.ceil(need/(per*P)), packsYes = Math.ceil(need/(per*Y));
+  return {packsNo, spendNo:packsNo*per*P, packsYes, spendYes:packsYes*per*P};
+}
+
+function aggregate(){
+  const map = new Map();
+  let totalQty = 0;
+  st.items.forEach(it=>{
+    const c = itemCalc(it);
+    totalQty += c.qty;
+    (it.ing||[]).forEach(g=>{
+      const per = ci(g.per), k = keyOf(g.name);
+      if(!per || !k) return;
+      if(!map.has(k)) map.set(k, {key:k, name:(g.name||"").trim(), perMin:per, need:0, src:"recipe"});
+      const a = map.get(k);
+      a.need += c.qty * per;
+      a.perMin = Math.min(a.perMin, per);
+      const nm = (g.name||"").trim();
+      if(nm.length < a.name.length) a.name = nm;
+    });
+  });
+
+  /* отдельные ресурсы, добавленные вручную (не из рецептов) */
+  (st.manual||[]).forEach(n=>{
+    const k = keyOf(n);
+    if(!k) return;
+    if(map.has(k)) return;
+    map.set(k, {key:k, name:(n||"").trim(), perMin:0, need:0, src:"manual"});
+  });
+
+  const rows = [...map.values()]
+    .filter(r => !(st.hidden && st.hidden[r.key]))
+    .map(r=>{
+    const ov = st.ov[r.key];
+    const hasOv = ov !== undefined && ov !== null && ov !== "";
+    const need = hasOv ? Math.max(0, parseInt(ov,10)||0) : r.need;
+    const plan = planResource(need, r.perMin, modeNow());
+    const done = Math.min(need, ci(st.done && st.done[r.key]));
+    const left = need - done;
+    const en = ci(st.en && st.en[r.key]);
+    return Object.assign({}, r, {hasOv, need, plan, done, left, en,
+      energy:left*en, ruby:rubyOf(left*en)});
+  }).sort((a,b)=> b.need - a.need);
+
+  const T = rows.reduce((s,r)=>({
+    need:s.need+r.need, spendNo:s.spendNo+r.plan.spendNo, spendYes:s.spendYes+r.plan.spendYes,
+    done:s.done+r.done, left:s.left+r.left, energy:s.energy+r.energy
+  }), {need:0, spendNo:0, spendYes:0, done:0, left:0, energy:0});
+  T.save = T.spendNo - T.spendYes;
+  T.packsNo = rows.reduce((s,r)=>s+r.plan.packsNo, 0);
+  T.packsYes = rows.reduce((s,r)=>s+r.plan.packsYes, 0);
+  T.ruby = rubyOf(T.energy);
+  return {rows, T, totalQty, items:st.items.length};
+}
+
+/* сколько энергии уходит на сбор ресурса:
+   axe=false — рубишь просто так (1 раз = 1 шт.),
+   axe=true  — рубишь в топор (1 раз = 2 шт., т.е. раз в 2 меньше) */
+function gather(g, units, axe){
+  const per = ci(g.per), en = ci(st.en[keyOf(g.name)]);
+  const amt = per * units;                     /* сколько штук ресурса надо */
+  const chops = axe ? Math.ceil(amt/2) : amt;  /* сколько раз рубить */
+  return {amt, en, chops, e: chops * en};      /* и сколько на это энергии */
+}
+
+/* два варианта стоимости целого изделия: топор+мастерская / только топор */
+function compareItems(){
+  return st.items.map((it,i)=>{
+    const c = itemCalc(it);
+    let eAxe = 0, eBoth = 0;
+    (it.ing||[]).forEach(g=>{
+      const per = ci(g.per); if(!per) return;
+      eAxe  += gather(g, c.madeNo,  true ).e;  /* топор без мастерской */
+      eBoth += gather(g, c.madeYes, true ).e;  /* топор + мастерская */
+    });
+    const game = ci(it.rub);
+    const rAxe = rubyOf(eAxe), rBoth = rubyOf(eBoth);
+    const best = Math.min(rAxe, rBoth);
+    return {i, name:it.name, qty:ci(it.qty),
+            c, eAxe, eBoth, rAxe, rBoth, best, game,
+            eBest: [eAxe, eBoth][[rAxe, rBoth].indexOf(best)]};
+  });
+}
+
+/* переимование ресурса — во всех рецептах и во всех сохранённых полях */
+function renameResource(oldKey, newName){
+  const ok = keyOf(oldKey), nk = keyOf(newName);
+  if(!ok || !nk || ok === nk) return false;
+  st.items.forEach(it=>(it.ing||[]).forEach(g=>{
+    if(keyOf(g.name) === ok) g.name = (newName||"").trim();
+  }));
+  ["ov","done","en","col"].forEach(f=>{
+    if(st[f] && st[f][ok] !== undefined){
+      if(st[f][nk] === undefined) st[f][nk] = st[f][ok];
+      delete st[f][ok];
+    }
+  });
+  return true;
+}
+
+/* ============ утилиты ============ */
+const el = (t,c,h)=>{const e=document.createElement(t); if(c) e.className=c; if(h!=null) e.innerHTML=h; return e;};
+const fmt = n => Math.round(n||0).toLocaleString("ru-RU");
+function escapeAttr(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
+function plural(n, one, few, many){
+  const a = Math.abs(n)%100, b = a%10;
+  if(a > 10 && a < 20) return many;
+  if(b > 1 && b < 5) return few;
+  if(b === 1) return one;
+  return many;
+}
+
+/* ============ выпадающий список ресурсов (свой — работает и на телефоне) ============ */
+let ddBox = null, ddInput = null, ddIdx = -1;
+function ddEnsure(){
+  if(!ddBox || !document.contains(ddBox)){ ddBox = document.createElement("div"); ddBox.id = "ddbox"; document.body.appendChild(ddBox); }
+  return ddBox;
+}
+function ddNames(){
+  const set = new Set();
+  st.items.forEach(it=>(it.ing||[]).forEach(g=>{ const t=(g.name||"").trim(); if(t) set.add(t); }));
+  (st.manual||[]).forEach(n=>{ const t=(n||"").trim(); if(t) set.add(t); });
+  document.querySelectorAll("#tSum input.rname").forEach(i=>{ const t=(i.value||"").trim(); if(t) set.add(t); });
+  return [...set];
+}
+const ddIsName = t => t instanceof HTMLInputElement && (t.classList.contains("rname") || t.dataset.f === "iname");
+
+function ddOpen(inp, filt){
+  const box = ddEnsure();
+  const q = filt ? (inp.value||"").trim().toLowerCase() : "";
+  const list = ddNames().filter(n=>!q || n.toLowerCase().includes(q));
+  ddInput = inp; ddIdx = list.length ? 0 : -1;
+  box.innerHTML = list.length
+    ? list.map((n,k)=>`<div class="ddi${k===0?" on":""}" data-v="${escapeAttr(n)}"><i style="background:${colorOf(keyOf(n))}"></i><span>${escapeAttr(n)}</span></div>`).join("")
+    : `<div class="ddnone">Нет совпадений — впишите новое название</div>`;
+  const r = inp.getBoundingClientRect();
+  box.style.display = "block";
+  box.style.width = "";
+  const w = Math.min(Math.max(r.width, 170), window.innerWidth - 12);
+  box.style.width = w + "px";
+  box.style.left = Math.max(6, Math.min(r.left, window.innerWidth - w - 6)) + "px";
+  box.style.top = "";
+  box.style.maxHeight = "";
+  requestAnimationFrame(()=>{
+    if(!document.contains(box)) return;
+    const b = box.getBoundingClientRect();
+    if(r.bottom + b.height + 8 > window.innerHeight && r.top > b.height + 8){
+      box.style.top = Math.max(6, r.top - b.height - 4) + "px";
+    }else{
+      box.style.top = (r.bottom + 4) + "px";
+      const free = window.innerHeight - r.bottom - 10;
+      if(b.height + 8 > free) box.style.maxHeight = Math.max(90, free) + "px";
+    }
+  });
+}
+function ddClose(){ if(ddBox) ddBox.style.display = "none"; ddInput = null; ddIdx = -1; }
+function ddMove(d){
+  if(!ddBox) return;
+  const its = [...ddBox.querySelectorAll(".ddi")];
+  if(!its.length) return;
+  ddIdx = (ddIdx + d + its.length) % its.length;
+  its.forEach((n,k)=>n.classList.toggle("on", k === ddIdx));
+  its[ddIdx].scrollIntoView({block:"nearest"});
+}
+function ddPick(inp, val){
+  ddClose();
+  try{ inp.focus(); }catch(e){}
+  inp.value = val;
+  inp.dispatchEvent(new Event("input",{bubbles:true}));
+  inp.dispatchEvent(new Event("change",{bubbles:true}));
+  ddClose();
+}
+
+/* ресурс остаётся в таблице «Ресурсы и цены», даже если его убрали/переписали в рецепте */
+function keepResource(name, skip){
+  const k = keyOf(name); if(!k) return;
+  let used = false;
+  st.items.forEach((it,ii)=>(it.ing||[]).forEach((g,jj)=>{
+    if(skip && skip.i === ii && skip.j === jj) return;
+    if(keyOf(g.name) === k) used = true;
+  }));
+  if(used) return;
+  st.manual = st.manual || [];
+  if(!st.manual.some(m=>keyOf(m) === k)) st.manual.push((name||"").trim());
+}
+
+/* ============ стрелки вверх/вниз для чисел (на телефоне) ============ */
+function addSteppers(){
+  document.querySelectorAll("input[type=number], input.ov").forEach(inp=>{
+    if(inp.dataset.st) return;
+    inp.dataset.st = "1";
+    const w = document.createElement("span");
+    w.className = "stp";
+    w.innerHTML = `<b data-step="1">▲</b><b data-step="-1">▼</b>`;
+    inp.parentNode.insertBefore(w, inp.nextSibling);
+  });
+}
+function stepBy(inp, d){
+  const raw = String(inp.value == null ? "" : inp.value).replace(/[\s\u00A0]/g,"").replace(/[^\d.\-]/g,"");
+  const min = inp.min !== "" && inp.min != null ? parseFloat(inp.min) : 0;
+  const max = inp.max !== "" && inp.max != null ? parseFloat(inp.max) : Infinity;
+  let v = (parseFloat(raw) || 0) + d;
+  if(!isNaN(min) && v < min) v = min;
+  if(isFinite(max) && v > max) v = max;
+  inp.value = v;
+  inp.dispatchEvent(new Event("input",{bubbles:true}));
+  inp.dispatchEvent(new Event("change",{bubbles:true}));
+}
+
+/* ============ карточки изделий ============ */
+function renderItems(){
+  const box = document.getElementById("items");
+  box.innerHTML = "";
+  st.items.forEach((it,i)=>{
+    const d = el("div","item");
+    d.innerHTML = `
+      <div class="item-head">
+        <input type="text" class="nm" data-f="name" data-i="${i}" value="${escapeAttr(it.name)}" placeholder="Название изделия">
+        <span class="muted">нужно</span>
+        <input type="number" class="qt" data-f="qty" data-i="${i}" min="0" value="${ci(it.qty)}">
+        <span class="muted">шт.</span>
+        <span class="muted">💎 игра просит</span>
+        <input type="number" class="rb" data-f="rub" data-i="${i}" min="0" value="${ci(it.rub)}">
+        <span class="muted">руб.</span>
+        <span class="sp"></span>
+        <button class="del" data-del-item="${i}" title="удалить изделие">🗑</button>
+      </div>
+      <div class="ing-head">
+        <span>Ресурс</span>
+        <span style="text-align:right">на 1 шт.</span>
+        <span style="text-align:right">на всё</span>
+        <span style="text-align:right">⚡/шт.</span>
+        <span></span>
+      </div>
+      <div class="ings" data-i="${i}"></div>
+      <button class="mini" data-add-ing="${i}">➕ добавить ресурс</button>
+      <div class="res-line" id="res-${i}"></div>`;
+
+    const ings = d.querySelector(".ings");
+    (it.ing||[]).forEach((g,j)=>{
+      const k = keyOf(g.name);
+      const r = el("div","ing-row");
+      r.dataset.i = i; r.dataset.j = j;
+      r.innerHTML = `
+        <span class="rwrap"><button class="chip" data-colkey="${k}" style="background:${colorOf(k)}" title="Цвет ресурса — нажмите, чтобы поменять"></button><input type="text" class="iname" data-f="iname" data-i="${i}" data-j="${j}" value="${escapeAttr(g.name)}" placeholder="Название ресурса" autocomplete="off" spellcheck="false"><button class="ddbtn" type="button" tabindex="-1" title="Показать список ресурсов">▼</button></span>
+        <span class="fld" data-l="на 1 шт."><input type="number" data-f="per" data-i="${i}" data-j="${j}" min="0" value="${ci(g.per)}" title="Сколько нужно на 1 шт. изделия"></span>
+        <span class="cell" data-tot="${i}:${j}" data-l="на всё">—</span>
+        <span class="fld" data-l="⚡/шт."><input type="number" data-f="en" data-i="${i}" data-j="${j}" min="0" value="${(st.en[k]?st.en[k]:"")}" title="Сколько энергии тратится на 1 единицу ресурса (общее для этого ресурса)"></span>
+        <button class="del" data-del-ing="${i}:${j}" title="удалить">🗑</button>`;
+      ings.appendChild(r);
+    });
+    box.appendChild(d);
+  });
+
+  if(!st.items.length) box.appendChild(el("p","note","Пока пусто — нажмите «Добавить изделие»."));
+
+  box.querySelectorAll("input[type=text],input[type=number]").forEach(inp=>{
+    inp.addEventListener("input", ()=>{
+      const i = +inp.dataset.i, f = inp.dataset.f;
+      if(f === "name") st.items[i].name = inp.value;
+      else if(f === "qty") st.items[i].qty = inp.value;
+      else if(f === "rub") st.items[i].rub = inp.value;
+      else if(f === "iname"){
+        const jj = +inp.dataset.j, ing = st.items[i].ing[jj];
+        const old = (ing.name||"").trim();
+        ing.name = inp.value;
+        if(keyOf(old) && keyOf(old) !== keyOf(inp.value)) keepResource(old, {i, j:jj});
+      }
+      else if(f === "per") st.items[i].ing[+inp.dataset.j].per = inp.value;
+      else if(f === "en"){
+        const k = keyOf(st.items[i].ing[+inp.dataset.j].name);
+        if(!k) return;
+        const v = ci(inp.value);
+        if(v) st.en[k] = v; else delete st.en[k];
+      }
+      update(); save();
+    });
+  });
+  box.querySelectorAll("[data-del-ing]").forEach(b=>{
+    b.onclick = ()=>{ const [i,j] = b.dataset.delIng.split(":").map(Number);
+      const g = st.items[i] && st.items[i].ing[j];
+      if(g) keepResource(g.name, {i, j});
+      st.items[i].ing.splice(j,1); renderItems(); update(); save("ресурс удалён из рецепта — в таблице цен остался"); };
+  });
+  box.querySelectorAll("[data-add-ing]").forEach(b=>{
+    b.onclick = ()=>{ const i = +b.dataset.addIng;
+      st.items[i].ing.push({name:"", per:1}); renderItems(); update(); save("ресурс добавлен");
+      const rows = document.querySelectorAll(`.ings[data-i="${i}"] .ing-row input[type=text]`);
+      if(rows.length) rows[rows.length-1].focus(); };
+  });
+  box.querySelectorAll("[data-del-item]").forEach(b=>{
+    b.onclick = ()=>{ st.items.splice(+b.dataset.delItem,1); renderItems(); update(); save("изделие удалено"); };
+  });
+  addSteppers();
+}
+/* ============ главный рендер ============ */
+function update(){
+  const A = aggregate();
+  const mode = modeNow(), hasBatch = mode !== "single";
+  const P = Math.max(1, st.pack), Y = P + Math.max(0, st.boost);
+
+  /* не терять фокус в редактируемых полях */
+  const act = document.activeElement;
+  let keep = null;
+  if(act && act.dataset && (act.dataset.ov || act.dataset.done || act.dataset.en)){
+    keep = act.dataset.ov   ? `input[data-ov="${act.dataset.ov}"]`
+         : act.dataset.done ? `input[data-done="${act.dataset.done}"]`
+                            : `input[data-en="${act.dataset.en}"]`;
+  }
+
+  /* --- подсказки --- */
+  document.getElementById("epcTxt").textContent = `1 💎 = ${Math.round(epc()*100)/100} ⚡ · режим: ${
+    mode==="single" ? "поштучно" : mode==="waste" ? "только пачками" : "без лишних"}`;
+
+  /* --- итог под таблицей ресурсов --- */
+  const needEn = A.rows.some(r=>r.left > 0 && !r.en);
+  document.getElementById("sumBar").innerHTML =
+    needEn
+      ? `💡 Впишите <b>⚡ цену за 1 шт.</b> — посчитаю, сколько энергии и рублей это стоит.`
+      : `⏳ Осталось собрать: <b>${fmt(A.T.left)}</b> шт. &nbsp;·&nbsp; на это уйдёт ⚡ <b>${fmt(A.T.energy)}</b> = <b>💎 ${fmt(A.T.ruby)}</b>
+         <span class="muted">(1 💎 = ${Math.round(epc()*100)/100} ⚡)</span>`;
+
+  /* --- общий вердикт (лучший вариант) --- */
+  const C = compareItems();
+  const tE = C.reduce((s,r)=>s+r.eBest,0), tR = rubyOf(tE), tG = C.reduce((s,r)=>s+r.game,0);
+  const eAxeT = C.reduce((s,r)=>s+r.eAxe,0), eBothT = C.reduce((s,r)=>s+r.eBoth,0);
+  const vb = document.getElementById("vbar");
+  if(!tE) vb.innerHTML = `Укажите слева <b>⚡ цену за 1 шт.</b> ресурса и в рецепте <b>💎 сколько игра просит</b> — тогда скажу, чем закрывать выгоднее.`;
+  else if(!tG) vb.innerHTML = `Укажите в рецепте <b>💎 сколько игра просит за закрытие</b> — сравню с ценой энергии.`;
+  else if(tG < tR) vb.innerHTML = `<b>Выгоднее закрывать рубинами игры</b>: 💎 ${fmt(tG)} против 💎 ${fmt(tR)} за энергию — экономия <b>${fmt(tR-tG)} 💎</b>.`;
+  else if(tG > tR) vb.innerHTML = `<b>Выгоднее собирать энергией</b>: лучший вариант стоит 💎 ${fmt(tR)}, а игра просит 💎 ${fmt(tG)} — экономия <b>${fmt(tG-tR)} 💎</b>.`;
+  else vb.innerHTML = `<b>Поровну</b>: 💎 ${fmt(tG)} и там и там.`;
+
+  /* --- таблица ресурсов --- */
+  const tb = document.querySelector("#tSum tbody"), tf = document.querySelector("#tSum tfoot");
+  tb.innerHTML = ""; tf.innerHTML = "";
+  A.rows.forEach(r=>{
+    const pct = r.need ? Math.min(100, Math.round(r.done/r.need*100)) : 0;
+    const tr = el("tr");
+    tr.innerHTML = `
+      <td><span class="rwrap"><button class="chip" data-colkey="${r.key}" style="background:${colorOf(r.key)}" title="Цвет ресурса — нажмите, чтобы поменять"></button><input type="text" class="rname" data-rn="${r.key}" data-src="${r.src||"recipe"}" value="${escapeAttr(r.name)}" title="${r.src==="manual"?"Название отдельного ресурса":"Изменить название — применится во всех рецептах"}"></span></td>
+      <td class="num" data-l="⚡ за 1 шт."><input type="text" inputmode="numeric" class="ov ${r.en?"on":""}" data-en="${r.key}" value="${r.en?r.en:""}" placeholder="0" title="Сколько энергии тратится на 1 единицу ресурса"></td>
+      <td class="num" data-l="Нужно">
+        <input type="text" inputmode="numeric" class="ov" data-ov="${r.key}" value="${r.need?fmt(r.need):""}" placeholder="${fmt(r.need)}" title="Впишите своё значение — расчёт пойдёт от него">
+        ${r.hasOv?`<button class="clr" data-clr="${r.key}" title="Сбросить — считать по рецепту">✕</button>`:""}
+      </td>
+      <td class="num" data-l="Собрано"><input type="text" inputmode="numeric" class="ov done ${r.done?"on":""}" data-done="${r.key}" value="${r.done?fmt(r.done):""}" placeholder="0" title="Сколько уже собрано"></td>
+      <td class="num" data-l="Осталось"><b>${fmt(r.left)}</b><span class="bar"><i style="width:${pct}%"></i></span><span class="muted">${pct}%</span></td>
+      <td class="num" data-l=""><button class="del" data-delres="${r.key}" data-src="${r.src||"recipe"}" title="${r.src==="manual"?"Удалить этот ресурс":"Ресурс из рецепта — убрать из таблицы (вернуть кнопкой «скрытые»)"}">🗑</button></td>`;
+    tb.appendChild(tr);
+  });
+  if(!A.rows.length) tb.innerHTML = `<tr><td colspan="6" class="muted">Пока пусто — добавьте изделие или нажмите «➕ Ресурс».</td></tr>`;
+
+  const t = el("tr","tot");
+  t.innerHTML = `<td><b>ИТОГО</b></td><td class="num" data-l="⚡ за 1 шт.">—</td>
+    <td class="num" data-l="Нужно">${fmt(A.T.need)}</td>
+    <td class="num" data-l="Собрано">${fmt(A.T.done)}</td>
+    <td class="num" data-l="Осталось">${fmt(A.T.left)}</td>
+    <td></td>`;
+  tf.appendChild(t);
+
+  /* --- кнопка «скрытые» --- */
+  const hid = Object.keys(st.hidden||{});
+  const bsh = document.getElementById("btnShowHidden");
+  bsh.style.display = hid.length ? "" : "none";
+  bsh.textContent = `👁 скрытые (${hid.length})`;
+
+  /* --- подсказки по списку ресурсов --- */
+  const dl = document.getElementById("dlRes");
+  dl.innerHTML = A.rows.map(r=>`<option value="${escapeAttr(r.name)}">`).join("");
+
+  /* --- рецепты: итог двумя вариантами --- */
+  const rAxeT = rubyOf(eAxeT), rBothT = rubyOf(eBothT);
+  const tb2 = document.getElementById("totalBar");
+  tb2.innerHTML = (eAxeT || eBothT)
+    ? `Все рецепты вместе:<br>
+       <b>Топор + Мастерская 3×4:</b> ⚡ ${fmt(eBothT)} = <b style="color:var(--acc2)">💎 ${fmt(rBothT)}</b><br>
+       <b>Топор без мастерской:</b> ⚡ ${fmt(eAxeT)} = <b>💎 ${fmt(rAxeT)}</b>
+       ${tG?`<br><span class="muted">игра просит за всё 💎 ${fmt(tG)}</span>`:""}`
+    : `Впишите <b>⚡ цену за 1 шт.</b> слева — посчитаю, сколько стоят все рецепты целиком.`;
+
+  st.items.forEach((it,i)=>{
+    const box = document.getElementById("res-"+i);
+    if(box){
+      const c = itemCalc(it);
+      const ings = (it.ing||[]).filter(g=>ci(g.per));
+      if(!ings.length){ box.innerHTML = `<span class="dim">ресурсы не указаны</span>`; }
+      else{
+        const game = ci(it.rub);
+
+        const V = [
+          {name:"Топор + Мастерская 3×4", units:c.madeYes, axe:true,
+           hint:"сначала рубишь в топор — ударов в 2 раза меньше, потом нарубленное идёт в мастерскую 3×4"},
+          {name:"Топор без мастерской", units:c.madeNo, axe:true,
+           hint:"топор 1×2: бьёшь в 2 раза реже, но материала уходит по рецепту — без экономии мастерской"}
+        ];
+        V.forEach(v=>{
+          v.parts = ings.map(g=>gather(g, v.units, v.axe));
+          v.e = v.parts.reduce((s,p)=>s+p.e, 0);
+          v.r = rubyOf(v.e);
+        });
+        const hasEn = V.some(v=>v.e > 0);
+        const bestIdx = hasEn ? V.reduce((b,v,i)=> v.r < V[b].r ? i : b, 0) : -1;
+
+        /* как сделать — словами */
+        let craftWork, craftPlain;
+        if(c.mode === "single"){
+          craftWork = craftPlain = `просто по одному — <b>${fmt(c.qty)}</b> шт., пачками не надо`;
+        }else if(c.mode === "exact"){
+          const freeW = Math.max(0, ci(c.qty) - ci(c.madeYes));
+          craftWork = `<b>${c.bYes}</b> ${plural(c.bYes,"пачка","пачки","пачек")} × ${Y} (в пачке крафтишь ${st.pack}, мастерская добавляет +1)` +
+            (c.singlesYes ? ` + <b>${c.singlesYes}</b> ${plural(c.singlesYes,"одиночная","одиночные","одиночных")}` : "") +
+            ` = <b>${fmt(c.qty)}</b> шт. Готово! Тебе самой сделать <b>${fmt(c.madeYes)}</b> шт., ещё <b>${fmt(freeW)}</b> шт. даст мастерская.`;
+          craftPlain = `<b>${c.bNo}</b> ${plural(c.bNo,"пачка","пачки","пачек")} по ${st.pack} шт. + ещё <b>${c.singlesNo}</b> шт. по одному = ровно <b>${fmt(c.qty)}</b> шт., делать всё самой и лишних не будет`;
+        }else{
+          craftWork = `<b>${c.bYes}</b> ${plural(c.bYes,"пачка","пачки","пачек")} дадут <b>${fmt(c.gotYes)}</b> шт. — тебе сделать <b>${fmt(c.madeYes)}</b> шт.`;
+          craftPlain = `<b>${c.bNo}</b> ${plural(c.bNo,"пачка","пачки","пачек")} по ${st.pack} шт. = <b>${fmt(c.madeNo)}</b> шт.${c.madeNo>c.qty?` (на ${fmt(c.madeNo-c.qty)} лишних)`:``}`;
+        }
+
+        /* таблица двух вариантов */
+        let varTable;
+        if(!hasEn){
+          varTable = `<div class="pl"><span class="dim">Стоимость:</span> впишите слева <b>⚡ цену за 1 шт.</b> — посчитаю энергии и рубины по каждому варианту</div>`;
+        }else{
+          const cell = v => v.parts.map((p,n)=>{
+            const g = ings[n];
+            return `${rn(g.name)} <b>${fmt(p.amt)}</b><br>
+                    <span class="sub">${v.axe?"топором:":"рубить просто так:"} ${fmt(p.chops)} ${plural(p.chops,"удар","удара","ударов")} × ${fmt(p.en)} = ${fmt(p.e)} ⚡</span>`;
+          }).join("<br>");
+          varTable = `<table class="vt">
+            <tr class="vth"><th>Вариант</th><th>Что собрать — и сколько раз рубить</th><th class="num">⚡ Энергия</th><th class="num">💎 Рубины</th></tr>
+            ${V.map((v,k)=>`<tr class="${k===bestIdx?"best":""}">
+              <td class="vname" title="${v.hint}">${v.name}</td>
+              <td class="rescell">${cell(v)}</td>
+              <td class="num" data-l="⚡ Энергия">${fmt(v.e)}</td>
+              <td class="num" data-l="💎 Рубины">${fmt(v.r)}</td>
+            </tr>`).join("")}
+          </table>`;
+        }
+
+        let gameLine = "";
+        if(game && bestIdx >= 0){
+          const best = V[bestIdx];
+          gameLine = `<div class="pl"><span class="dim">Игра просит:</span> 💎 ${fmt(game)} → ${
+            game < best.r ? `<span class="g">рубинами игры дешевле на ${fmt(best.r-game)}</span>` :
+            game > best.r ? `<span class="bad">энергией дешевле на ${fmt(game-best.r)}</span>` :
+                            "поровну"} <span class="dim">(сравнено с лучшим вариантом «${best.name}»)</span></div>`;
+        }else if(!game){
+          gameLine = `<div class="pl"><span class="dim">Игра просит:</span> впишите <b>💎 рубинов за закрытие</b> в шапке рецепта</div>`;
+        }
+
+        box.innerHTML = `
+          <div class="pl"><b>Нужно изделий: ${fmt(c.qty)} шт.</b></div>
+          ${varTable}
+          <div class="pl"><span class="dim">Остальное что есть:</span> пока пусто — добавим позже</div>
+          <div class="pl"><span class="dim">Как сделать в мастерской 3×4:</span> ${craftWork}</div>
+          ${c.mode==="single" ? "" : `<div class="pl"><span class="dim">Как сделать без мастерской:</span> ${craftPlain}</div>`}
+          ${gameLine}`;
+      }
+    }
+    (it.ing||[]).forEach((g,j)=>{
+      const c = document.querySelector(`.cell[data-tot="${i}:${j}"]`);
+      if(c) c.textContent = fmt(ci(g.per)*ci(it.qty));
+    });
+    /* цвета ресурсов в карточках */
+    (it.ing||[]).forEach((g,j)=>{
+      const row = document.querySelector(`.ing-row[data-i="${i}"][data-j="${j}"]`);
+      const chip = row && row.querySelector(".chip");
+      if(chip){ chip.dataset.colkey = keyOf(g.name); chip.style.background = colorOf(keyOf(g.name)); }
+    });
+  });
+
+  /* --- обработчики таблицы --- */
+  tb.querySelectorAll("input[data-ov]").forEach(inp=>{
+    inp.oninput = ()=>{
+      const k = inp.dataset.ov, d = inp.value.replace(/\D/g,"");
+      inp.value = d;
+      if(d === "") delete st.ov[k]; else st.ov[k] = d;
+      save(); update();
+    };
+  });
+  tb.querySelectorAll("input[data-done]").forEach(inp=>{
+    inp.oninput = ()=>{
+      const k = inp.dataset.done, d = inp.value.replace(/\D/g,"");
+      inp.value = d;
+      if(!d || d === "0") delete st.done[k]; else st.done[k] = d;
+      save(); update();
+    };
+  });
+  tb.querySelectorAll("input[data-en]").forEach(inp=>{
+    inp.oninput = ()=>{
+      const k = inp.dataset.en, d = inp.value.replace(/\D/g,"");
+      inp.value = d;
+      if(!d || d === "0") delete st.en[k]; else st.en[k] = d;
+      syncItemEn(k); save(); update();
+    };
+  });
+  tb.querySelectorAll("[data-clr]").forEach(b=>{
+    b.onclick = ()=>{ delete st.ov[b.dataset.clr]; save("сброшено — считаем по рецепту"); update(); };
+  });
+  tb.querySelectorAll(".chip").forEach(b=>{
+    b.onclick = ()=>cycleColor(b.dataset.colkey);
+  });
+  document.querySelectorAll("#items .chip").forEach(b=>{
+    b.onclick = ()=>cycleColor(b.dataset.colkey);
+  });
+  tb.querySelectorAll("input.rname").forEach(inp=>{
+    inp.onchange = ()=>{
+      const oldKey = inp.dataset.rn, nv = inp.value.trim();
+      if(!nv){ update(); return; }
+      const mi = (st.manual||[]).findIndex(m=>keyOf(m)===oldKey);
+      if(mi >= 0) st.manual[mi] = nv;
+      if(!renameResource(oldKey, nv)){ update(); save(); return; }
+      renderItems(); update(); save("название изменено");
+    };
+  });
+  tb.querySelectorAll("[data-delres]").forEach(b=>{
+    b.onclick = ()=>{
+      const k = b.dataset.delres;
+      if(b.dataset.src === "manual"){
+        const i = (st.manual||[]).findIndex(m=>keyOf(m)===k);
+        if(i >= 0) st.manual.splice(i,1);
+        delete st.ov[k]; delete st.done[k]; delete st.en[k];
+        save("ресурс удалён");
+      }else{
+        st.hidden[k] = true;
+        save("ресурс скрыт из таблицы (вернуть — кнопка «👁 скрытые»)");
+      }
+      renderItems(); update();
+    };
+  });
+
+  if(colorOf.dirty){ colorOf.dirty = false; save(); }
+
+  if(keep){
+    const ni = document.querySelector(keep);
+    if(ni){ ni.focus(); const v = ni.value; try{ ni.setSelectionRange(v.length, v.length); }catch(e){} }
+  }
+  addSteppers();
+}
+
+/* подтянуть изменённую цену ресурса в поля карточек */
+function syncItemEn(key){
+  document.querySelectorAll("#items .ing-row").forEach(row=>{
+    const i = +row.dataset.i, j = +row.dataset.j;
+    const g = st.items[i] && st.items[i].ing[j];
+    if(!g) return;
+    if(keyOf(g.name) === key){
+      const inp = row.querySelector('input[data-f="en"]');
+      if(inp) inp.value = (st.en[key] ? st.en[key] : "");
+    }
+  });
+}
+
+/* ============ события настроек ============ */
+document.getElementById("btnAddRes").onclick = ()=>{
+  st.manual = st.manual || [];
+  let n = "Новый ресурс", x = 2;
+  const taken = k => (st.manual||[]).some(m=>keyOf(m)===k)
+    || Array.prototype.some.call(document.querySelectorAll("#tSum .rname"), i=>i.dataset.rn === k);
+  while(taken(keyOf(n))) n = "Новый ресурс " + (x++);
+  st.manual.push(n);
+  save("ресурс добавлен — впишите название, сколько нужно и ⚡ цену");
+  update();
+  const inp = Array.prototype.find.call(document.querySelectorAll("#tSum .rname"), i=>i.dataset.rn === keyOf(n));
+  if(inp){ inp.focus(); inp.select(); }
+};
+document.getElementById("btnShowHidden").onclick = ()=>{
+  st.hidden = {};
+  update(); save("скрытые ресурсы возвращены");
+};
+document.getElementById("btnAddItem").onclick = ()=>{
+  st.items.push({name:"Новое изделие", qty:1, rub:0, ing:[{name:"", per:1}]});
+  renderItems(); update(); save("изделие добавлено");
+  const rows = document.querySelectorAll("#items .item .nm");
+  if(rows.length) rows[rows.length-1].focus();
+};
+document.getElementById("setPack").oninput = e=>{ st.pack = ci(e.target.value)||1; update(); save(); };
+document.getElementById("setBoost").oninput = e=>{ st.boost = ci(e.target.value); update(); save(); };
+document.getElementById("setCr").oninput = e=>{ st.cr = ci(e.target.value)||100; update(); save(); };
+document.getElementById("setCe").oninput = e=>{ st.ce = ci(e.target.value)||1200; update(); save(); };
+document.getElementById("setMode").onchange = e=>{ st.mode = e.target.value; update(); save("режим изменён"); };
+document.getElementById("btnPrint").onclick = ()=>window.print();
+document.getElementById("btnReset").onclick = ()=>{
+  if(confirm("Вернуть набор данных, зашитый в файл (3 рецепта: Стакан, Веер, Маска)?")){
+    st = JSON.parse(JSON.stringify(DEFAULT));
+    syncSettings(); renderItems(); update(); save("загружен пример");
+  }
+};
+document.getElementById("btnExport").onclick = ()=>{
+  const blob = new Blob([JSON.stringify(st,null,1)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "family-island-рецепты.json"; a.click();
+  URL.revokeObjectURL(a.href);
+};
+document.getElementById("btnImport").onclick = ()=>document.getElementById("fileIn").click();
+document.getElementById("fileIn").onchange = e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = ()=>{
+    try{
+      const p = JSON.parse(rd.result);
+      if(!Array.isArray(p.items)) throw new Error("нет поля items");
+      st = Object.assign({}, DEFAULT, p);
+      syncSettings(); renderItems(); update(); save("импорт выполнен");
+    }catch(err){ alert("Не удалось прочитать файл: " + err.message); }
+  };
+  rd.readAsText(f); e.target.value = "";
+};
+
+function syncSettings(){
+  document.getElementById("setPack").value = st.pack;
+  document.getElementById("setBoost").value = st.boost;
+  document.getElementById("setCr").value = st.cr;
+  document.getElementById("setCe").value = st.ce;
+  document.getElementById("setMode").value = st.mode || "exact";
+}
+
+/* ============ глобальные события: список ресурсов и стрелки чисел ============ */
+document.addEventListener("pointerdown", e=>{
+  const t = e.target;
+  if(!t || !t.closest) return;
+  const opt = t.closest("#ddbox .ddi");
+  if(opt){
+    e.preventDefault();
+    if(ddInput && document.contains(ddInput)) ddPick(ddInput, opt.dataset.v); else ddClose();
+    return;
+  }
+  const btn = t.closest(".ddbtn");
+  if(btn){
+    e.preventDefault();
+    const inp = btn.parentNode && btn.parentNode.querySelector("input");
+    if(!inp) return;
+    const wasOpen = ddInput === inp && ddBox && ddBox.style.display === "block";
+    if(wasOpen) ddClose();
+    else { try{ inp.focus(); }catch(err){} ddOpen(inp, false); }
+    return;
+  }
+  if(t.closest("#ddbox")) return;
+  if(ddIsName(t)) return;
+  ddClose();
+});
+document.addEventListener("focusin", e=>{
+  if(ddIsName(e.target)) ddOpen(e.target, false);
+  else if(!e.target.closest || !e.target.closest("#ddbox")) ddClose();
+});
+document.addEventListener("input", e=>{ if(ddIsName(e.target)) ddOpen(e.target, true); });
+document.addEventListener("keydown", e=>{
+  if(!ddInput || e.target !== ddInput) return;
+  if(e.key === "ArrowDown"){ e.preventDefault(); ddMove(1); }
+  else if(e.key === "ArrowUp"){ e.preventDefault(); ddMove(-1); }
+  else if(e.key === "Enter"){
+    const on = ddBox && ddBox.querySelector(".ddi.on");
+    if(on){ e.preventDefault(); ddPick(ddInput, on.dataset.v); }
+  }
+  else if(e.key === "Escape") ddClose();
+});
+document.addEventListener("click", e=>{
+  const b = e.target && e.target.closest && e.target.closest(".stp b");
+  if(!b) return;
+  e.preventDefault();
+  const inp = b.parentNode && b.parentNode.previousSibling;
+  if(inp && inp.nodeType === 1 && inp.tagName === "INPUT") stepBy(inp, +b.dataset.step);
+});
+window.addEventListener("scroll", ()=>{ if(ddBox && ddBox.style.display === "block") ddClose(); }, true);
+
+/* ============ старт ============ */
+load();
+syncSettings();
+renderItems();
+update();
+</script>
+</body>
+</html>
