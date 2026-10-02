@@ -281,8 +281,6 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
           <th>Ресурс</th>
           <th class="num">⚡ за 1 шт.</th>
           <th class="num">Нужно ✏️</th>
-          <th class="num">Собрано</th>
-          <th class="num">Осталось</th>
           <th class="num"></th>
         </tr></thead>
         <tbody></tbody>
@@ -552,6 +550,8 @@ const ddIsName = t => t instanceof HTMLInputElement && (t.classList.contains("rn
 
 function ddOpen(inp, filt){
   const box = ddEnsure();
+  /* запоминаем название до правки — пригодится, когда ввод закончат */
+  if(inp && inp.dataset.orig == null) inp.dataset.orig = inp.value;
   const q = filt ? (inp.value||"").trim().toLowerCase() : "";
   const list = ddNames().filter(n=>!q || n.toLowerCase().includes(q));
   ddInput = inp; ddIdx = list.length ? 0 : -1;
@@ -589,7 +589,7 @@ function ddMove(d){
 }
 function ddPick(inp, val){
   ddClose();
-  try{ inp.focus(); }catch(e){}
+  /* поле не фокусируем — на телефоне после выбора не должна вылезать клавиатура */
   inp.value = val;
   inp.dispatchEvent(new Event("input",{bubbles:true}));
   inp.dispatchEvent(new Event("change",{bubbles:true}));
@@ -680,16 +680,25 @@ function renderItems(){
   if(!st.items.length) box.appendChild(el("p","note","Пока пусто — нажмите «Добавить изделие»."));
 
   box.querySelectorAll("input[type=text],input[type=number]").forEach(inp=>{
+    if(inp.dataset.f === "iname"){
+      /* запоминаем, что было до правки, а старое название ресурса сохраняем
+         только когда ввод закончен — иначе на каждой букве плодился новый ресурс */
+      inp.addEventListener("focus", ()=>{ if(inp.dataset.orig == null) inp.dataset.orig = inp.value; });
+      inp.addEventListener("change", ()=>{
+        const oi = +inp.dataset.i, oj = +inp.dataset.j, orig = inp.dataset.orig || "";
+        delete inp.dataset.orig;
+        if(keyOf(orig) && keyOf(orig) !== keyOf(inp.value)) keepResource(orig, {i:oi, j:oj});
+        update(); save();
+      });
+    }
     inp.addEventListener("input", ()=>{
       const i = +inp.dataset.i, f = inp.dataset.f;
       if(f === "name") st.items[i].name = inp.value;
       else if(f === "qty") st.items[i].qty = inp.value;
       else if(f === "rub") st.items[i].rub = inp.value;
       else if(f === "iname"){
-        const jj = +inp.dataset.j, ing = st.items[i].ing[jj];
-        const old = (ing.name||"").trim();
-        ing.name = inp.value;
-        if(keyOf(old) && keyOf(old) !== keyOf(inp.value)) keepResource(old, {i, j:jj});
+        /* старое название сохраняем не здесь, а по окончании ввода (см. change выше) */
+        st.items[i].ing[+inp.dataset.j].name = inp.value;
       }
       else if(f === "per") st.items[i].ing[+inp.dataset.j].per = inp.value;
       else if(f === "en"){
@@ -760,27 +769,22 @@ function update(){
   const tb = document.querySelector("#tSum tbody"), tf = document.querySelector("#tSum tfoot");
   tb.innerHTML = ""; tf.innerHTML = "";
   A.rows.forEach(r=>{
-    const pct = r.need ? Math.min(100, Math.round(r.done/r.need*100)) : 0;
     const tr = el("tr");
     tr.innerHTML = `
       <td><span class="rwrap"><button class="chip" data-colkey="${r.key}" style="background:${colorOf(r.key)}" title="Цвет ресурса — нажмите, чтобы поменять"></button><input type="text" class="rname" data-rn="${r.key}" data-src="${r.src||"recipe"}" value="${escapeAttr(r.name)}" title="${r.src==="manual"?"Название отдельного ресурса":"Изменить название — применится во всех рецептах"}"></span></td>
       <td class="num" data-l="⚡ за 1 шт."><input type="text" inputmode="numeric" class="ov ${r.en?"on":""}" data-en="${r.key}" value="${r.en?r.en:""}" placeholder="0" title="Сколько энергии тратится на 1 единицу ресурса"></td>
       <td class="num" data-l="Нужно">
         <input type="text" inputmode="numeric" class="ov" data-ov="${r.key}" value="${r.need?fmt(r.need):""}" placeholder="${fmt(r.need)}" title="Впишите своё значение — расчёт пойдёт от него">
-        ${r.hasOv?`<button class="clr" data-clr="${r.key}" title="Сбросить — считать по рецепту">✕</button>`:""}
+        ${r.hasOv?`<span class="muted" title="Своё значение — вписано вручную">✎</span>`:""}
       </td>
-      <td class="num" data-l="Собрано"><input type="text" inputmode="numeric" class="ov done ${r.done?"on":""}" data-done="${r.key}" value="${r.done?fmt(r.done):""}" placeholder="0" title="Сколько уже собрано"></td>
-      <td class="num" data-l="Осталось"><b>${fmt(r.left)}</b><span class="bar"><i style="width:${pct}%"></i></span><span class="muted">${pct}%</span></td>
       <td class="num" data-l=""><button class="del" data-delres="${r.key}" data-src="${r.src||"recipe"}" title="${r.src==="manual"?"Удалить этот ресурс":"Ресурс из рецепта — убрать из таблицы (вернуть кнопкой «скрытые»)"}">🗑</button></td>`;
     tb.appendChild(tr);
   });
-  if(!A.rows.length) tb.innerHTML = `<tr><td colspan="6" class="muted">Пока пусто — добавьте изделие или нажмите «➕ Ресурс».</td></tr>`;
+  if(!A.rows.length) tb.innerHTML = `<tr><td colspan="4" class="muted">Пока пусто — добавьте изделие или нажмите «➕ Ресурс».</td></tr>`;
 
   const t = el("tr","tot");
   t.innerHTML = `<td><b>ИТОГО</b></td><td class="num" data-l="⚡ за 1 шт.">—</td>
     <td class="num" data-l="Нужно">${fmt(A.T.need)}</td>
-    <td class="num" data-l="Собрано">${fmt(A.T.done)}</td>
-    <td class="num" data-l="Осталось">${fmt(A.T.left)}</td>
     <td></td>`;
   tf.appendChild(t);
 
@@ -877,7 +881,6 @@ function update(){
         box.innerHTML = `
           <div class="pl"><b>Нужно изделий: ${fmt(c.qty)} шт.</b></div>
           ${varTable}
-          <div class="pl"><span class="dim">Остальное что есть:</span> пока пусто — добавим позже</div>
           <div class="pl"><span class="dim">Как сделать в мастерской 3×4:</span> ${craftWork}</div>
           ${c.mode==="single" ? "" : `<div class="pl"><span class="dim">Как сделать без мастерской:</span> ${craftPlain}</div>`}
           ${gameLine}`;
@@ -1047,8 +1050,11 @@ document.addEventListener("pointerdown", e=>{
   if(!t || !t.closest) return;
   const opt = t.closest("#ddbox .ddi");
   if(opt){
-    e.preventDefault();
-    if(ddInput && document.contains(ddInput)) ddPick(ddInput, opt.dataset.v); else ddClose();
+    /* мышь выбирает сразу, а палец — только по нажатию (иначе нельзя прокрутить список) */
+    if(e.pointerType === "mouse"){
+      e.preventDefault();
+      if(ddInput && document.contains(ddInput)) ddPick(ddInput, opt.dataset.v); else ddClose();
+    }
     return;
   }
   const btn = t.closest(".ddbtn");
@@ -1058,7 +1064,11 @@ document.addEventListener("pointerdown", e=>{
     if(!inp) return;
     const wasOpen = ddInput === inp && ddBox && ddBox.style.display === "block";
     if(wasOpen) ddClose();
-    else { try{ inp.focus(); }catch(err){} ddOpen(inp, false); }
+    else {
+      /* на телефоне не фокусируем поле — иначе тут же вылезает клавиатура */
+      if(e.pointerType === "mouse"){ try{ inp.focus(); }catch(err){} }
+      ddOpen(inp, false);
+    }
     return;
   }
   if(t.closest("#ddbox")) return;
@@ -1066,8 +1076,11 @@ document.addEventListener("pointerdown", e=>{
   ddClose();
 });
 document.addEventListener("focusin", e=>{
-  if(ddIsName(e.target)) ddOpen(e.target, false);
-  else if(!e.target.closest || !e.target.closest("#ddbox")) ddClose();
+  const t = e.target;
+  /* фокус просто ушёл никуда (палец коснулся не того) — список не закрываем */
+  if(t === document.body || t === document.documentElement) return;
+  if(ddIsName(t)) ddOpen(t, false);
+  else if(!t.closest || !t.closest("#ddbox")) ddClose();
 });
 document.addEventListener("input", e=>{ if(ddIsName(e.target)) ddOpen(e.target, true); });
 document.addEventListener("keydown", e=>{
@@ -1081,6 +1094,13 @@ document.addEventListener("keydown", e=>{
   else if(e.key === "Escape") ddClose();
 });
 document.addEventListener("click", e=>{
+  /* палец: выбор пункта происходит по нажатию, а не в момент касания —
+     поэтому прокрутка списка пальцем его не закрывает */
+  const opt = e.target && e.target.closest && e.target.closest("#ddbox .ddi");
+  if(opt){
+    if(ddBox && ddBox.style.display === "block" && ddInput && document.contains(ddInput)) ddPick(ddInput, opt.dataset.v);
+    return;
+  }
   const b = e.target && e.target.closest && e.target.closest(".stp b");
   if(!b) return;
   e.preventDefault();
