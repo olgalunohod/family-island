@@ -112,7 +112,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .rwrap .ddbtn{position:absolute;right:3px;top:50%;transform:translateY(-50%);background:var(--panel2);border:1px solid var(--line);color:var(--dim);border-radius:6px;font-size:9px;line-height:1;padding:6px 5px;cursor:pointer}
 .rwrap .ddbtn:hover,.rwrap .ddbtn:focus{border-color:var(--acc);color:var(--acc)}
 .ing-row .rwrap input{padding-right:26px}
-#ddbox{position:fixed;z-index:999;display:none;background:var(--panel2);border:1px solid var(--line);border-radius:9px;box-shadow:0 12px 30px rgba(0,0,0,.6);max-height:200px;overflow:auto;padding:4px}
+#ddbox{position:fixed;z-index:999;display:none;background:var(--panel2);border:1px solid var(--line);border-radius:9px;box-shadow:0 12px 30px rgba(0,0,0,.6);max-height:200px;overflow:auto;overscroll-behavior:contain;padding:4px;-webkit-overflow-scrolling:touch}
 #ddbox .ddi{display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--txt)}
 #ddbox .ddi span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #ddbox .ddi.on,#ddbox .ddi:hover{background:rgba(76,217,123,.16);color:var(--acc)}
@@ -1087,7 +1087,13 @@ document.addEventListener("click", e=>{
   const inp = b.parentNode && b.parentNode.previousSibling;
   if(inp && inp.nodeType === 1 && inp.tagName === "INPUT") stepBy(inp, +b.dataset.step);
 });
-window.addEventListener("scroll", ()=>{ if(ddBox && ddBox.style.display === "block") ddClose(); }, true);
+/* закрываем список только когда скроллится страница, а не само окошко списка */
+window.addEventListener("scroll", e=>{
+  if(!ddBox || ddBox.style.display !== "block") return;
+  const t = e.target;
+  if(t === ddBox || (t && t.closest && t.closest("#ddbox"))) return;
+  ddClose();
+}, true);
 
 /* ============ старт ============ */
 load();
