@@ -126,6 +126,15 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .foldline{font-size:12px;color:var(--dim);margin-top:5px}
 .foldline button{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:6px;padding:2px 8px;font-size:11.5px;cursor:pointer;margin-left:6px}
 .foldline button:hover{color:var(--acc);border-color:var(--acc)}
+
+/* блоки-сворачивалки (настройки, синхронизация): на компьютере раскрыты и без шапки,
+   на телефоне остаётся одна строка, тап — показать */
+.foldh{cursor:pointer;user-select:none;-webkit-user-select:none}
+.foldh .foldic{display:none;margin-left:auto;padding-left:8px;color:var(--dim);font-size:11px;font-style:normal;transition:transform .15s}
+.box.open .foldh .foldic{transform:rotate(180deg)}
+#setFold{display:none}
+#setFold b{font-size:13.5px;white-space:nowrap}
+#setFold .muted{min-width:0}
 .cols .box{margin-bottom:0}
 @media(max-width:1020px){.cols{grid-template-columns:1fr}.cols .box{margin-bottom:12px}}
 .pl{margin-top:3px;line-height:1.65}
@@ -189,6 +198,19 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
   .box h2 button{padding:6px 8px}
   .note{font-size:11.5px;line-height:1.5}
   .setbar{gap:6px 12px;font-size:12px}
+
+  /* настройки свернуты в одну строку — показать можно тапом */
+  #setFold{display:flex;align-items:center;gap:4px 8px;flex-wrap:wrap;margin-bottom:3px}
+  .foldh .foldic{display:block}
+  .box:not(.open) > .foldc{display:none}
+  .box:not(.open) > .foldh{margin-bottom:0}
+  .syncrow{padding:1px 0;font-size:13.5px}
+
+  /* синхронизация — в самый низ страницы, чтобы не мешала при прокрутке */
+  .wrap{display:flex;flex-direction:column}
+  #boxSync{order:5}
+  footer{order:6}
+
   input[type=number],input[type=text],select,.ov,.rname{font-size:16px}
   input[type=number]{width:62px}
   .ov{width:76px}
@@ -205,17 +227,25 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
   .item-head .sp{display:none}
   .item{padding:9px 8px}
 
-  /* таблица ресурсов — карточками */
+  /* таблица ресурсов — карточками: имя строкой, «⚡ за 1 шт.» строкой,
+     а «Нужно» + ▲▼ + ↑↓🗑 одной строкой. Внутри карточки две колонки —
+     из-за этого значения и стрелки у всех карточек ровно по одной линии */
   #tSum thead{display:none}
   #tSum,#tSum tbody,#tSum tfoot{display:block;width:100%}
-  #tSum tr{display:block;border:1px solid var(--line);border-radius:9px;background:var(--panel2);padding:4px 7px;margin-bottom:5px}
+  #tSum tr{display:grid;grid-template-columns:1fr auto;column-gap:6px;align-items:center;border:1px solid var(--line);border-radius:9px;background:var(--panel2);padding:4px 7px;margin-bottom:5px}
   #tSum tr.tot{background:rgba(255,201,60,.09);border-color:var(--acc)}
   #tSum td{display:flex;align-items:center;justify-content:space-between;gap:6px;border:none;padding:2px 0;text-align:left}
   #tSum td::before{content:attr(data-l);color:var(--dim);font-size:11px;text-transform:none;letter-spacing:0;flex:none}
   #tSum td:first-child::before{content:""}
-  #tSum td:first-child{padding-bottom:5px;border-bottom:1px solid var(--line);margin-bottom:2px}
-  #tSum td:last-child{justify-content:flex-end;padding-top:1px}
+  #tSum td:nth-child(1){grid-column:1/-1;padding-bottom:5px;border-bottom:1px solid var(--line);margin-bottom:2px}
+  #tSum td:nth-child(2),#tSum td:nth-child(3){grid-column:1}
+  #tSum td:last-child{grid-column:2;justify-content:flex-end;gap:5px;padding-top:1px}
   #tSum td:last-child::before{content:none}
+  #tSum td:only-child{grid-column:1/-1;justify-content:flex-start;padding-top:2px;padding-bottom:2px;border-bottom:none;margin-bottom:0}
+  /* ✕ (сброс «Нужно») висит в пустом промежутке — на место числа и стрелок не влияет */
+  #tSum .ovwrap{position:relative;gap:6px}
+  #tSum .stp{margin-left:0}
+  #tSum .ovclr{position:absolute;right:100%;top:50%;transform:translateY(-50%);margin:0 5px 0 0}
   #tSum .rwrap{width:100%;min-width:0}
   #tSum .rname{width:100%;min-width:0}
   .bar{width:48px;margin:0 0 0 auto}
@@ -224,7 +254,7 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
 
   /* строки ингредиентов — карточками */
   .ing-head{display:none}
-  .ing-row{grid-template-columns:1fr 1fr;gap:5px 8px;padding:6px;border:1px solid var(--line);border-radius:9px;background:rgba(0,0,0,.15);margin-bottom:6px}
+  .ing-row{grid-template-columns:1fr auto;gap:5px 8px;padding:6px;border:1px solid var(--line);border-radius:9px;background:rgba(0,0,0,.15);margin-bottom:6px}
   .ing-row .rwrap{grid-column:1/-1;min-width:0}
   .ing-row .fld,.ing-row .cell{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0}
   .ing-row .fld::before,.ing-row .cell::before{content:attr(data-l);color:var(--dim);font-size:11px}
@@ -259,6 +289,11 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
   .setbar{flex-direction:column;align-items:stretch;gap:5px}
   .setbar label{justify-content:flex-start}
   .toolbar button{flex:1 1 70px;font-size:11.5px}
+  /* самые узкие телефоны: ↑↓🗑 обязаны уместиться в той же строке, что и ▲▼ (в т.ч. при ✕) */
+  .stp b{min-width:28px;padding:4px 5px}
+  #tSum td:last-child{padding-left:5px}
+  #tSum td:last-child .nv{padding:1px 6px}
+  #tSum .del{padding:1px 5px}
 }
 
 @media print{
@@ -269,6 +304,8 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
   .tot,.good,.card .val,.res-line b,.res-line .g{color:#000}
   .ov,.rname,input{border:1px solid #999;background:#fff;color:#000}
   .muted,.card .hint,.card .lbl,.note{color:#444}
+  .foldc{display:block!important}
+  #setFold,.foldic{display:none!important}
 }
 </style>
 </head>
@@ -282,8 +319,13 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
 <div class="wrap">
 
   <!-- ===== НАСТРОЙКИ ===== -->
-  <div class="box">
-    <div class="setbar">
+  <div class="box" id="boxSet">
+    <div class="foldh" id="setFold" data-fold role="button" tabindex="0" title="Показать настройки">
+      <b>⚙️ Настройки</b>
+      <span class="muted" id="setFoldTxt"></span>
+      <i class="foldic">▾</i>
+    </div>
+    <div class="setbar foldc">
       <label>Пачка <input type="number" id="setPack" min="1" value="3"></label>
       <label>буст +<input type="number" id="setBoost" min="0" value="1"></label>
       <span class="muted">→ вместо 3 даёт 4</span>
@@ -298,11 +340,13 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
   </div>
 
   <!-- ===== СИНХРОНИЗАЦИЯ (облако) ===== -->
-  <div class="box">
-    <div class="syncrow">
+  <div class="box" id="boxSync">
+    <div class="syncrow foldh" data-fold role="button" tabindex="0" title="Показать или скрыть">
       <b>☁️ Синхронизация</b>
       <span class="muted" id="syncStatus">выключена — данные только на этом устройстве</span>
+      <i class="foldic">▾</i>
     </div>
+    <div class="foldc">
     <p class="note">С включённой синхронизацией данные одинаковые на всех ваших устройствах: поправили на компьютере — открываете на телефоне, уже новое. Что сохранилось последним, то и актуально.</p>
     <div class="toolbar">
       <input type="text" id="syncKey" placeholder="ключ синхронизации" autocomplete="off" spellcheck="false">
@@ -310,6 +354,7 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
       <button id="syncDis" style="display:none">Отключить</button>
     </div>
     <p class="note">Ключ — как пароль: у кого он есть, тот может читать и менять ваши данные. Другу синхронизация не нужна: без ключа данные остаются локальными.</p>
+    </div>
   </div>
 
   <div class="vbar" id="vbar"></div>
@@ -639,6 +684,7 @@ function bindBoxDrag(){
       if(!dragBox || dragBox === box) return;
       e.preventDefault();
       const col = box.parentNode;
+      if(!col || col !== dragBox.parentNode) return;   /* бросать можно только внутри своей колонки */
       const r = box.getBoundingClientRect();
       const after = e.clientY > r.top + r.height/2;
       if(after) col.insertBefore(dragBox, box.nextSibling);
@@ -1143,6 +1189,13 @@ function update(){
   /* --- подсказки --- */
   document.getElementById("epcTxt").textContent = `1 💎 = ${Math.round(epc()*100)/100} ⚡ · режим: ${
     mode==="single" ? "поштучно" : mode==="waste" ? "только пачками" : "без лишних"}`;
+  /* свёрнутая строка настроек на телефоне — те же самые значения, но в одну строчку */
+  const sFold = document.getElementById("setFoldTxt");
+  if(sFold){
+    const modeTxt = mode==="single" ? "поштучно" : mode==="waste" ? "только пачками" : "без лишних";
+    sFold.textContent = "Пачка " + st.pack + (st.boost > 0 ? " +" + st.boost : "") + " · " + modeTxt
+      + " · 1💎 = " + (Math.round(epc()*100)/100) + " ⚡";
+  }
 
   /* --- одиночные ресурсы (только топор) --- */
   const pl = plainTotals();
@@ -1761,6 +1814,14 @@ renderFestBar();
 renderItems();
 update();
 bindBoxDrag();
+/* тап по строке настроек/синхронизации — показать или спрятать (на телефоне) */
+document.querySelectorAll(".foldh").forEach(h=>{
+  const box = h.closest(".box");
+  if(!box) return;
+  const t = ()=>{ box.classList.toggle("open"); };
+  h.addEventListener("click", t);
+  h.addEventListener("keydown", e=>{ if(e.key === "Enter" || e.key === " "){ e.preventDefault(); t(); } });
+});
 /* синхронизация */
 document.getElementById("syncConn").onclick = ()=>syncConnect();
 document.getElementById("syncDis").onclick = ()=>syncDisconnect();
