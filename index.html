@@ -87,12 +87,39 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .ing-row input[type=number]{width:100%}
 .ing-row .rwrap input{width:100%;min-width:0}
 .ing-row .cell{text-align:right;font-size:13px;color:var(--dim)}
+.prow{display:flex;flex-wrap:wrap;gap:5px 8px;align-items:center;padding:5px 6px;border:1px solid var(--line);border-radius:9px;background:rgba(0,0,0,.15);margin-bottom:6px}
+.prow .rwrap{flex:1 1 210px;min-width:0}
+.prow .rwrap input{width:100%;min-width:0;padding-right:26px}
+.prow .fld{display:inline-flex;align-items:center;gap:5px}
+.prow .fld::before{content:attr(data-l);color:var(--dim);font-size:11px}
+.prow .fld input{width:64px;text-align:right}
+.prow .pcell{font-size:12.5px;color:var(--dim);flex:1 1 auto;min-width:0}
+.prow .pcell b{color:var(--acc)}
+.prow .del{margin-left:auto}
 .res-line{background:rgba(0,0,0,.22);border:1px solid var(--line);border-radius:8px;padding:7px 10px;margin-top:8px;font-size:12.5px;line-height:1.75}
 .res-line .dim{color:var(--dim)}
 .res-line .g{color:var(--acc2);font-weight:700}
 .res-line b{color:var(--acc)}
 
 .cols{display:grid;grid-template-columns:minmax(430px,1fr) minmax(0,1.3fr);gap:12px;align-items:start}
+.cols.onecol{grid-template-columns:1fr}
+.col{display:flex;flex-direction:column;gap:12px;min-width:0}
+.col .box{margin-bottom:0}
+.grip{cursor:grab;color:var(--dim);font-size:15px;padding:0 4px;user-select:none}
+.grip:hover{color:var(--acc)}
+.box.dragover{outline:2px dashed var(--acc);outline-offset:2px}
+.item.dragover{outline:2px dashed var(--acc);outline-offset:2px}
+.item.dragging{opacity:.45}
+.nv{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:6px;padding:1px 7px;font-size:12px;cursor:pointer;flex:none}
+.nv:hover{color:var(--acc);border-color:var(--acc)}
+.festbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:rgba(0,0,0,.18)}
+.festbar label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--dim)}
+.festbar select{min-width:150px;flex:1 1 150px}
+.foldb{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:6px;padding:0 7px;font-size:11px;cursor:pointer}
+.foldb:hover{color:var(--acc);border-color:var(--acc)}
+.foldline{font-size:12px;color:var(--dim);margin-top:5px}
+.foldline button{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:6px;padding:2px 8px;font-size:11.5px;cursor:pointer;margin-left:6px}
+.foldline button:hover{color:var(--acc);border-color:var(--acc)}
 .cols .box{margin-bottom:0}
 @media(max-width:1020px){.cols{grid-template-columns:1fr}.cols .box{margin-bottom:12px}}
 .pl{margin-top:3px;line-height:1.65}
@@ -104,6 +131,9 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 
 /* --- цвета ресурсов вместо эмодзи --- */
 .chip{width:14px;min-width:14px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,.45);padding:0;cursor:pointer;background:#4a5a7a}
+.ovclr{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:6px;padding:1px 6px;font-size:11px;cursor:pointer;margin-left:4px;flex:none}
+.ovclr:hover{color:#ff8f8f;border-color:#ff8f8f}
+.ovwrap{display:inline-flex;align-items:center;justify-content:flex-end;gap:0}
 .chip:hover{filter:brightness(1.25)}
 .rwrap{display:flex;align-items:center;gap:6px;position:relative}
 .rn{font-weight:700;white-space:nowrap}
@@ -265,16 +295,29 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
 
   <div class="cols">
 
-  <!-- ===== ЛЕВАЯ КОЛОНКА: РЕСУРСЫ И ЦЕНЫ ===== -->
-  <div class="box">
+  <div class="col" id="colL">
+
+  <!-- ===== РЕСУРСЫ И ЦЕНЫ ===== -->
+  <div class="box" id="boxRes">
     <h2>
+      <span class="grip" title="Потяните за ⠿, чтобы поменять блоки местами">⠿</span>
       <span>🧾 Ресурсы и цены</span>
       <span style="flex:1"></span>
+      <button class="nv" data-move="res:-1" title="Переместить блок вверх">↑</button>
+      <button class="nv" data-move="res:1" title="Переместить блок вниз">↓</button>
+      <button class="nv" data-mcol="res" title="Перенести блок в другую колонку">⇄</button>
       <button class="primary" id="btnAddRes" title="Добавить отдельный ресурс, которого нет в рецептах">➕ Ресурс</button>
-      <button id="btnShowHidden" style="display:none" title="Вернуть ресурсы, скрытые кнопкой 🗑">👁 скрытые</button>
     </h2>
+    <div class="festbar">
+      <label>Фестиваль
+        <select id="festSel" title="У каждого фестиваля свои ресурсы, цены и рецепты"></select>
+      </label>
+      <button class="nv" id="festAdd" title="Создать новый фестиваль с тем же набором, что сейчас">➕ новый</button>
+      <button class="nv" id="festRen" title="Переименовать этот фестиваль">✏️ имя</button>
+      <button class="nv" id="festDel" title="Удалить этот фестиваль">🗑</button>
+    </div>
     <p class="note">Вбейте <b>все ресурсы</b> и укажите <b>⚡ сколько стоит 1 шт.</b> Квадратик слева — <b>цвет ресурса</b> (нажмите, чтобы поменять), он же будет в рецептах. Название правится прямо в таблице — оно поменяется и в рецептах.
-      🗑 — убрать лишнее (ресурсы из рецептов прячутся, вернуть можно кнопкой «👁 скрытые»).</p>
+      Столбец «Нужно» показывает количество <b>с учётом мастерской 3×4</b>. Если впишете своё число, рядом появится ✕ — он возвращает расчёт по рецепту. 🗑 — удалить ресурс насовсем, вместе с рецептами, где он используется.</p>
     <div class="scroll">
       <table id="tSum">
         <thead><tr>
@@ -290,11 +333,39 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
     <div class="vbar" id="sumBar" style="margin-bottom:0"></div>
   </div>
 
-  <!-- ===== ПРАВАЯ КОЛОНКА: РЕЦЕПТЫ ===== -->
-  <div class="box">
-    <h2>🏭 Рецепты — считаем здесь</h2>
-    <p class="note">Впишите изделие, сколько его нужно и из чего оно делается — дальше считается само. Два варианта:
-      <b>топор + мастерская 3×4</b> и <b>топор без мастерской</b> — по каждому видно, сколько собрать, сколько уйдёт энергии и сколько это в рубинах.</p>
+  <!-- ===== ОДИНОЧНЫЕ РЕСУРСЫ (без рецептов) ===== -->
+  <div class="box" id="boxPlain">
+    <h2>
+      <span class="grip" title="Потяните за ⠿, чтобы поменять блоки местами">⠿</span>
+      <span>🪓 Одиночные ресурсы — только топор</span>
+      <span style="flex:1"></span>
+      <button class="nv" data-move="plain:-1" title="Переместить блок вверх">↑</button>
+      <button class="nv" data-move="plain:1" title="Переместить блок вниз">↓</button>
+      <button class="nv" data-mcol="plain" title="Перенести блок в другую колонку">⇄</button>
+    </h2>
+    <p class="note">Ресурсы, которые <b>не входят в рецепты</b>: рубишь в топор (1 удар = 2 шт.), в мастерскую они не идут.
+      Считаются <b>дополнительно</b> к рецептам — отдельной строкой в итогах. Сколько нужно — впишите сами.</p>
+    <div id="plainList"></div>
+    <button class="mini" id="plainAdd">➕ добавить ресурс</button>
+    <div class="vbar" id="plainBar" style="margin-bottom:0"></div>
+  </div>
+
+  </div><!-- /colL -->
+
+  <div class="col" id="colR">
+
+  <!-- ===== РЕЦЕПТЫ ===== -->
+  <div class="box" id="boxItems">
+    <h2>
+      <span class="grip" title="Потяните за ⠿, чтобы поменять блоки местами">⠿</span>
+      <span>🏭 Рецепты — считаем здесь</span>
+      <span style="flex:1"></span>
+      <button class="nv" data-move="items:-1" title="Переместить блок вверх">↑</button>
+      <button class="nv" data-move="items:1" title="Переместить блок вниз">↓</button>
+      <button class="nv" data-mcol="items" title="Перенести блок в другую колонку">⇄</button>
+    </h2>
+    <p class="note">Впишите изделие, сколько его нужно и из чего оно делается — дальше считается само. Основной вариант — <b>топор + мастерская 3×4</b>; вариант <b>«Топор без мастерской»</b> можно свернуть кнопкой в его строке.
+      Порядок рецептов меняется перетаскиванием за ⠿ или кнопками ↑↓.</p>
     <div class="toolbar">
       <button class="primary" id="btnAddItem">➕ Добавить изделие</button>
       <span class="sp"></span>
@@ -308,6 +379,8 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
     <div id="items"></div>
     <div class="vbar" id="totalBar" style="margin-bottom:0"></div>
   </div>
+
+  </div><!-- /colR -->
 
   </div><!-- /cols -->
 
@@ -350,7 +423,7 @@ const DEFAULT = {
   ov:{"маска":"71"}, done:{},
   en:{"перья":"133","красные стаканчики":"102","цветные палочки":"118",
       "колонка":"166","блёстки":67,"маска":71},
-  manual:["Маска","Блёстки"], hidden:{},
+  manual:["Маска","Блёстки"], hidden:{}, plain:[],
   col:{"красные стаканчики":0,"цветные палочки":1,"перья":2,"колонка":3,
        "угли":4,"маска":5,"блёстки":6},
   items:[
@@ -361,7 +434,8 @@ const DEFAULT = {
     {name:"Пустынная маска", qty:"71", rub:0, batch:true,
      ing:[{name:"Маска", per:"7"},{name:"Блёстки", per:"5"}]}
   ],
-  only:true
+  only:true,
+  fest:"Фестиваль 1", fests:null, bord:null
 };
 let st;
 
@@ -381,10 +455,217 @@ function load(){
 }
 function save(msg){
   try{
+    if(st && st.fests && st.cur && st.fests[st.cur]) st.fests[st.cur] = festSnap();  /* текущий фестиваль — всегда свежий */
     localStorage.setItem(LS, JSON.stringify(st));
     if(msg){ const el = document.getElementById("saveMsg"); el.textContent = "✅ " + msg;
       clearTimeout(save._t); save._t = setTimeout(()=>el.textContent = "", 2200); }
   }catch(e){}
+}
+
+/* ============ фестивали ============
+   У каждого фестиваля — свой полный набор: ресурсы, цены, рецепты, одиночные, настройки.
+   Текущий набор живёт в корне st (как раньше), а в st.fests[name] лежит его снимок.
+   Переключили фестиваль — снимок текущего записан, выбранный развёрнут в корень. */
+const FESTKEYS = ["pack","boost","mode","cr","ce","en","ov","done","manual","hidden","col","items","plain","bord"];
+function festSnap(){
+  const o = {};
+  FESTKEYS.forEach(k=>{ o[k] = JSON.parse(JSON.stringify(st[k] === undefined ? null : st[k])); });
+  return o;
+}
+function festApply(snap){
+  if(!snap) return;
+  FESTKEYS.forEach(k=>{
+    const v = snap[k];
+    if(v === undefined || v === null) return;          /* в новом наборе нет такого поля — оставляем как было */
+    st[k] = JSON.parse(JSON.stringify(v));
+  });
+  if(!Array.isArray(st.items)) st.items = [];
+  if(!Array.isArray(st.plain)) st.plain = [];
+}
+function festsEnsure(){
+  if(!st.fests || typeof st.fests !== "object" || !Object.keys(st.fests).length){
+    st.fests = {};
+    st.cur = (DEFAULT && DEFAULT.fest) || "Фестиваль 1";
+    st.fests[st.cur] = festSnap();
+  }
+  if(!st.cur || !st.fests[st.cur]) st.cur = Object.keys(st.fests)[0];
+}
+function festSave(){ if(st.fests && st.cur) st.fests[st.cur] = festSnap(); }
+function festSwitch(name){
+  if(!st.fests || !st.fests[name] || name === st.cur) return;
+  festSave();
+  const snap = st.fests[name];
+  festApply(snap);
+  st.cur = name;
+  syncSettings(); renderFestBar(); renderItems(); renderPlain(); update(); save("фестиваль: " + name);
+}
+function renderFestBar(){
+  const sel = document.getElementById("festSel");
+  if(!sel) return;
+  const names = Object.keys(st.fests || {});
+  sel.innerHTML = names.map(n=>`<option value="${escapeAttr(n)}"${n===st.cur?" selected":""}>${escapeAttr(n)}</option>`).join("");
+  const del = document.getElementById("festDel");
+  if(del) del.style.display = names.length > 1 ? "" : "none";
+}
+function festNameFree(nm){
+  return !Object.keys(st.fests||{}).some(k=>k.toLowerCase() === nm.toLowerCase());
+}
+function festAdd(){
+  festsEnsure();
+  let n = (st.cur || "Фестиваль") + " — копия", x = 2;
+  while(!festNameFree(n)) n = (st.cur || "Фестиваль") + " — копия " + (x++);
+  festSave();
+  st.fests[n] = JSON.parse(JSON.stringify(st.fests[st.cur]));
+  st.cur = n;
+  renderFestBar(); save("фестиваль «" + n + "» создан — переименуйте кнопкой ✏️");
+}
+function festRen(){
+  festsEnsure();
+  const nn = prompt("Новое название фестиваля:", st.cur);
+  if(nn == null) return;
+  const t = nn.trim();
+  if(!t || t === st.cur) return;
+  if(!festNameFree(t)){ save("фестиваль с таким названием уже есть"); return; }
+  festSave();
+  st.fests[t] = st.fests[st.cur];
+  delete st.fests[st.cur];
+  st.cur = t;
+  renderFestBar(); save("фестиваль переименован");
+}
+function festDel(){
+  festsEnsure();
+  const names = Object.keys(st.fests);
+  if(names.length < 2){ save("нельзя удалить последний фестиваль"); return; }
+  if(!confirm("Удалить фестиваль «" + st.cur + "»?")) return;
+  delete st.fests[st.cur];
+  const first = Object.keys(st.fests)[0];
+  festApply(st.fests[first]);
+  st.cur = first;
+  syncSettings(); renderFestBar(); renderItems(); renderPlain(); update(); save("фестиваль удалён");
+}
+
+/* ============ порядок крупных блоков ============ */
+const BOXES = {res:"boxRes", plain:"boxPlain", items:"boxItems"};
+const boxEl = id => document.getElementById(id);
+function colIds(col){ return [...col.children].map(c=>c.id).filter(Boolean); }
+function saveBord(){
+  const L = document.getElementById("colL"), R = document.getElementById("colR");
+  if(!L || !R) return;
+  st.bord = {L:colIds(L), R:colIds(R)};
+}
+function applyBord(){
+  const L = document.getElementById("colL"), R = document.getElementById("colR");
+  if(!L || !R || !st.bord) return;
+  const put = (col, ids)=> (ids||[]).forEach(id=>{ const b = boxEl(id); if(b && b.parentNode !== col) col.appendChild(b); });
+  put(L, st.bord.L); put(R, st.bord.R);
+}
+function moveBox(key, dir){
+  const b = boxEl(BOXES[key]);
+  if(!b || !b.parentNode) return;
+  const sib = dir < 0 ? b.previousElementSibling : b.nextElementSibling;
+  if(!sib) return;
+  if(dir < 0) b.parentNode.insertBefore(b, sib);
+  else b.parentNode.insertBefore(sib, b);
+  saveBord(); save("блоки переставлены");
+}
+/* если одна из колонок осталась пустой — сетка схлопывается в одну колонку */
+function fixCols(){
+  const wrap = document.querySelector(".cols");
+  const L = document.getElementById("colL"), R = document.getElementById("colR");
+  if(!wrap || !L || !R) return;
+  wrap.classList.toggle("onecol", !L.children.length || !R.children.length);
+}
+/* перенос блока в другую колонку кнопкой ⇄ */
+function moveBoxCol(key){
+  const b = boxEl(BOXES[key]);
+  const L = document.getElementById("colL"), R = document.getElementById("colR");
+  if(!b || !L || !R) return;
+  const to = b.parentNode === L ? R : L;
+  to.appendChild(b);
+  fixCols();
+  saveBord(); save("блок перенесён в другую колонку");
+}
+/* перетаскивание крупных блоков за ⠿ (мышью — на компьютере) */
+let dragBox = null;
+function bindBoxDrag(){
+  document.querySelectorAll(".box > h2 > .grip").forEach(g=>{
+    const box = g.closest(".box");
+    if(!box) return;
+    g.setAttribute("draggable","true");
+    g.addEventListener("dragstart", e=>{
+      dragBox = box;
+      try{ e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", box.id); }catch(err){}
+      box.classList.add("dragging");
+    });
+    g.addEventListener("dragend", ()=>{
+      dragBox = null;
+      document.querySelectorAll(".dragover").forEach(x=>x.classList.remove("dragover"));
+      box.classList.remove("dragging");
+    });
+  });
+  document.querySelectorAll(".box").forEach(box=>{
+    box.addEventListener("dragover", e=>{
+      if(!dragBox || dragBox === box) return;
+      e.preventDefault();
+      box.classList.add("dragover");
+    });
+    box.addEventListener("dragleave", ()=>box.classList.remove("dragover"));
+    box.addEventListener("drop", e=>{
+      box.classList.remove("dragover");
+      if(!dragBox || dragBox === box) return;
+      e.preventDefault();
+      const col = box.parentNode;
+      const r = box.getBoundingClientRect();
+      const after = e.clientY > r.top + r.height/2;
+      if(after) col.insertBefore(dragBox, box.nextSibling);
+      else col.insertBefore(dragBox, box);
+      dragBox = null;
+      fixCols();
+      saveBord(); save("блоки переставлены");
+    });
+  });
+}
+/* перетаскивание карточек рецептов за ⠿ и кнопки ↑↓ */
+function moveItem(i, dir){
+  const j = i + dir;
+  if(!st.items[i] || !st.items[j]) return;
+  const t = st.items[i]; st.items[i] = st.items[j]; st.items[j] = t;
+  renderItems(); update(); save("рецепты переставлены");
+}
+let dragItem = null;
+function bindItemDrag(){
+  const list = document.getElementById("items");
+  if(!list) return;
+  list.querySelectorAll(".item").forEach(card=>{
+    const grip = card.querySelector(".item-head .grip");
+    if(grip) grip.addEventListener("dragstart", e=>{
+      dragItem = card;
+      try{ e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain","item"); }catch(err){}
+      card.classList.add("dragging");
+    });
+    card.addEventListener("dragend", ()=>{
+      dragItem = null;
+      list.querySelectorAll(".dragover").forEach(x=>x.classList.remove("dragover"));
+      card.classList.remove("dragging");
+    });
+    card.addEventListener("dragover", e=>{
+      if(!dragItem || dragItem === card) return;
+      e.preventDefault();
+      card.classList.add("dragover");
+    });
+    card.addEventListener("dragleave", ()=>card.classList.remove("dragover"));
+    card.addEventListener("drop", e=>{
+      card.classList.remove("dragover");
+      if(!dragItem || dragItem === card) return;
+      e.preventDefault();
+      const from = +dragItem.dataset.i, to = +card.dataset.i;
+      if(isNaN(from) || isNaN(to) || from === to) return;
+      const moved = st.items.splice(from,1)[0];
+      st.items.splice(to, 0, moved);
+      dragItem = null;
+      renderItems(); update(); save("рецепты переставлены");
+    });
+  });
 }
 
 /* ============ расчёт ============ */
@@ -436,7 +717,8 @@ function aggregate(){
       if(!per || !k) return;
       if(!map.has(k)) map.set(k, {key:k, name:(g.name||"").trim(), perMin:per, need:0, src:"recipe"});
       const a = map.get(k);
-      a.need += c.qty * per;
+      /* «Нужно» — сколько придётся самой собрать при работе в мастерской 3×4 */
+      a.need += c.madeYes * per;
       a.perMin = Math.min(a.perMin, per);
       const nm = (g.name||"").trim();
       if(nm.length < a.name.length) a.name = nm;
@@ -452,7 +734,6 @@ function aggregate(){
   });
 
   const rows = [...map.values()]
-    .filter(r => !(st.hidden && st.hidden[r.key]))
     .map(r=>{
     const ov = st.ov[r.key];
     const hasOv = ov !== undefined && ov !== null && ov !== "";
@@ -518,6 +799,7 @@ function renameResource(oldKey, newName){
       delete st[f][ok];
     }
   });
+  (st.plain||[]).forEach(p=>{ if(keyOf(p.name) === ok) p.name = (newName||"").trim(); });
   return true;
 }
 
@@ -546,7 +828,7 @@ function ddNames(){
   document.querySelectorAll("#tSum input.rname").forEach(i=>{ const t=(i.value||"").trim(); if(t) set.add(t); });
   return [...set];
 }
-const ddIsName = t => t instanceof HTMLInputElement && (t.classList.contains("rname") || t.dataset.f === "iname");
+const ddIsName = t => t instanceof HTMLInputElement && (t.classList.contains("rname") || t.dataset.f === "iname" || t.dataset.pn !== undefined);
 
 function ddOpen(inp, filt){
   const box = ddEnsure();
@@ -609,6 +891,62 @@ function keepResource(name, skip){
   if(!st.manual.some(m=>keyOf(m) === k)) st.manual.push((name||"").trim());
 }
 
+/* ============ одиночные ресурсы (без рецептов — только топор) ============ */
+function plainRows(){ if(!Array.isArray(st.plain)) st.plain = []; return st.plain; }
+function plainCalc(p){
+  const k = keyOf(p.name), q = ci(p.qty);
+  if(!k || !q) return {q:0, en:0, chops:0, e:0, r:0, noEn:false};
+  const en = ci(st.en[k]), chops = Math.ceil(q/2);   /* топор: 1 удар = 2 шт. */
+  return {q, en, chops, e: chops*en, r: rubyOf(chops*en), noEn: !en};
+}
+function plainTotals(){
+  let e = 0, miss = 0, cnt = 0;
+  plainRows().forEach(p=>{
+    const c = plainCalc(p);
+    if(!c.q || !keyOf(p.name)) return;
+    cnt++;
+    if(c.noEn){ miss++; return; }
+    e += c.e;
+  });
+  return {e, r: rubyOf(e), miss, cnt};
+}
+function renderPlain(){
+  const box = document.getElementById("plainList");
+  if(!box) return;
+  const rows = plainRows();
+  box.innerHTML = rows.length ? rows.map((p,i)=>`
+    <div class="prow" data-p="${i}">
+      <span class="rwrap"><button class="chip" data-pcol="${i}" style="background:${colorOf(keyOf(p.name))}" title="Цвет ресурса — нажмите, чтобы поменять"></button><input type="text" class="pname" data-pn="${i}" value="${escapeAttr(p.name)}" placeholder="Название ресурса" autocomplete="off" spellcheck="false"><button class="ddbtn" type="button" tabindex="-1" title="Показать список ресурсов">▼</button></span>
+      <span class="fld" data-l="нужно"><input type="text" inputmode="numeric" class="ov" data-pq="${i}" value="${p.qty?ci(p.qty):""}" placeholder="0"></span>
+      <span class="muted">шт.</span>
+      <span class="pcell" data-pcalc="${i}"></span>
+      <button class="del" data-pdel="${i}" title="убрать">🗑</button>
+    </div>`).join("")
+    : `<div class="note" style="margin:0">Пока пусто — нажмите «➕ добавить ресурс». Ресурс должен быть в списке слева, там для него и впишется ⚡ цена за 1 шт.</div>`;
+
+  box.querySelectorAll("input[data-pn]").forEach(inp=>{
+    const i = +inp.dataset.pn;
+    inp.addEventListener("input", ()=>{ const r = plainRows()[i]; if(r){ r.name = inp.value; update(); save(); } });
+    inp.addEventListener("change", ()=>{
+      const nm = (inp.value||"").trim();
+      if(nm){ keepResource(nm); update(); save(); renderPlain(); }
+    });
+  });
+  box.querySelectorAll("input[data-pq]").forEach(inp=>{
+    const i = +inp.dataset.pq;
+    inp.addEventListener("input", ()=>{
+      const d = inp.value.replace(/\D/g,""); inp.value = d;
+      const r = plainRows()[i]; if(r){ r.qty = d; update(); save(); }
+    });
+  });
+  box.querySelectorAll("[data-pcol]").forEach(b=>{
+    b.onclick = ()=>{ const r = plainRows()[+b.dataset.pcol]; if(r){ cycleColor(keyOf(r.name)); renderPlain(); update(); } };
+  });
+  box.querySelectorAll("[data-pdel]").forEach(b=>{
+    b.onclick = ()=>{ plainRows().splice(+b.dataset.pdel,1); renderPlain(); update(); save("ресурс убран"); };
+  });
+}
+
 /* ============ стрелки вверх/вниз для чисел (на телефоне) ============ */
 function addSteppers(){
   document.querySelectorAll("input[type=number], input.ov").forEach(inp=>{
@@ -638,8 +976,12 @@ function renderItems(){
   box.innerHTML = "";
   st.items.forEach((it,i)=>{
     const d = el("div","item");
+    d.dataset.i = i;
     d.innerHTML = `
       <div class="item-head">
+        <span class="grip" draggable="true" title="Потяните за ⠿, чтобы поменять рецепты местами">⠿</span>
+        <button class="nv" data-imove="${i}:-1" title="Переместить рецепт вверх">↑</button>
+        <button class="nv" data-imove="${i}:1" title="Переместить рецепт вниз">↓</button>
         <input type="text" class="nm" data-f="name" data-i="${i}" value="${escapeAttr(it.name)}" placeholder="Название изделия">
         <span class="muted">нужно</span>
         <input type="number" class="qt" data-f="qty" data-i="${i}" min="0" value="${ci(it.qty)}">
@@ -725,7 +1067,10 @@ function renderItems(){
   box.querySelectorAll("[data-del-item]").forEach(b=>{
     b.onclick = ()=>{ st.items.splice(+b.dataset.delItem,1); renderItems(); update(); save("изделие удалено"); };
   });
+
   addSteppers();
+  renderPlain();
+  bindItemDrag();
 }
 /* ============ главный рендер ============ */
 function update(){
@@ -736,15 +1081,33 @@ function update(){
   /* не терять фокус в редактируемых полях */
   const act = document.activeElement;
   let keep = null;
-  if(act && act.dataset && (act.dataset.ov || act.dataset.done || act.dataset.en)){
-    keep = act.dataset.ov   ? `input[data-ov="${act.dataset.ov}"]`
-         : act.dataset.done ? `input[data-done="${act.dataset.done}"]`
-                            : `input[data-en="${act.dataset.en}"]`;
+  if(act && act.dataset){
+    const d = act.dataset;
+    if(d.ov)        keep = `input[data-ov="${d.ov}"]`;
+    else if(d.done) keep = `input[data-done="${d.done}"]`;
+    else if(d.en)   keep = `input[data-en="${d.en}"]`;
+    else if(d.pq)   keep = `input[data-pq="${d.pq}"]`;    /* одиночный ресурс: сколько нужно */
+    else if(d.pn)   keep = `input[data-pn="${d.pn}"]`;    /* одиночный ресурс: название */
   }
 
   /* --- подсказки --- */
   document.getElementById("epcTxt").textContent = `1 💎 = ${Math.round(epc()*100)/100} ⚡ · режим: ${
     mode==="single" ? "поштучно" : mode==="waste" ? "только пачками" : "без лишних"}`;
+
+  /* --- одиночные ресурсы (только топор) --- */
+  const pl = plainTotals();
+  document.querySelectorAll("[data-pcalc]").forEach(c=>{
+    const p = plainRows()[+c.dataset.pcalc];
+    const q = plainCalc(p || {});
+    c.innerHTML = (!p || !p.name || !q.q) ? `<span class="dim">—</span>`
+      : q.noEn ? `<span class="dim">впиши ⚡ за 1 шт. слева</span>`
+      : `топор: ${fmt(q.chops)} ${plural(q.chops,"удар","удара","ударов")} · ⚡ <b>${fmt(q.e)}</b> = 💎 ${fmt(q.r)}`;
+  });
+  const pbar = document.getElementById("plainBar");
+  if(pbar) pbar.innerHTML = pl.cnt
+    ? `Итого одиночных: ⚡ <b>${fmt(pl.e)}</b> = <b>💎 ${fmt(pl.r)}</b> <span class="muted">(только топор — в мастерскую не идут)</span>${
+       pl.miss?`<br>💡 У ${pl.miss} ${plural(pl.miss,"ресурса","ресурсов","ресурсов")} не вписана <b>⚡ цена за 1 шт.</b>`:""}`
+    : `Добавьте ресурс — посчитаю, сколько энергии уйдёт на него топором.`;
 
   /* --- итог под таблицей ресурсов --- */
   const needEn = A.rows.some(r=>r.left > 0 && !r.en);
@@ -759,11 +1122,18 @@ function update(){
   const tE = C.reduce((s,r)=>s+r.eBest,0), tR = rubyOf(tE), tG = C.reduce((s,r)=>s+r.game,0);
   const eAxeT = C.reduce((s,r)=>s+r.eAxe,0), eBothT = C.reduce((s,r)=>s+r.eBoth,0);
   const vb = document.getElementById("vbar");
-  if(!tE) vb.innerHTML = `Укажите слева <b>⚡ цену за 1 шт.</b> ресурса и в рецепте <b>💎 сколько игра просит</b> — тогда скажу, чем закрывать выгоднее.`;
-  else if(!tG) vb.innerHTML = `Укажите в рецепте <b>💎 сколько игра просит за закрытие</b> — сравню с ценой энергии.`;
-  else if(tG < tR) vb.innerHTML = `<b>Выгоднее закрывать рубинами игры</b>: 💎 ${fmt(tG)} против 💎 ${fmt(tR)} за энергию — экономия <b>${fmt(tR-tG)} 💎</b>.`;
-  else if(tG > tR) vb.innerHTML = `<b>Выгоднее собирать энергией</b>: лучший вариант стоит 💎 ${fmt(tR)}, а игра просит 💎 ${fmt(tG)} — экономия <b>${fmt(tG-tR)} 💎</b>.`;
-  else vb.innerHTML = `<b>Поровну</b>: 💎 ${fmt(tG)} и там и там.`;
+  const plainNote = (pl.cnt && !pl.e)
+    ? `<br><span class="muted">+ одиночные ресурсы: впишите <b>⚡ цену за 1 шт.</b> — посчитаю и их</span>`
+    : pl.e
+      ? `<br><span class="muted">+ одиночные ресурсы: ⚡ ${fmt(pl.e)} = 💎 ${fmt(pl.r)} (только топор)</span>`
+      : "";
+  let vtxt;
+  if(!tE) vtxt = `Укажите слева <b>⚡ цену за 1 шт.</b> ресурса и в рецепте <b>💎 сколько игра просит</b> — тогда скажу, чем закрывать выгоднее.`;
+  else if(!tG) vtxt = `Укажите в рецепте <b>💎 сколько игра просит</b> — сравню с ценой энергии.`;
+  else if(tG < tR) vtxt = `<b>Выгоднее закрывать рубинами игры</b>: 💎 ${fmt(tG)} против 💎 ${fmt(tR)} за энергию — экономия <b>${fmt(tR-tG)} 💎</b>.`;
+  else if(tG > tR) vtxt = `<b>Выгоднее собирать энергией</b>: лучший вариант стоит 💎 ${fmt(tR)}, а игра просит 💎 ${fmt(tG)} — экономия <b>${fmt(tG-tR)} 💎</b>.`;
+  else vtxt = `<b>Поровну</b>: 💎 ${fmt(tG)} и там и там.`;
+  vb.innerHTML = vtxt + plainNote;
 
   /* --- таблица ресурсов --- */
   const tb = document.querySelector("#tSum tbody"), tf = document.querySelector("#tSum tfoot");
@@ -774,10 +1144,9 @@ function update(){
       <td><span class="rwrap"><button class="chip" data-colkey="${r.key}" style="background:${colorOf(r.key)}" title="Цвет ресурса — нажмите, чтобы поменять"></button><input type="text" class="rname" data-rn="${r.key}" data-src="${r.src||"recipe"}" value="${escapeAttr(r.name)}" title="${r.src==="manual"?"Название отдельного ресурса":"Изменить название — применится во всех рецептах"}"></span></td>
       <td class="num" data-l="⚡ за 1 шт."><input type="text" inputmode="numeric" class="ov ${r.en?"on":""}" data-en="${r.key}" value="${r.en?r.en:""}" placeholder="0" title="Сколько энергии тратится на 1 единицу ресурса"></td>
       <td class="num" data-l="Нужно">
-        <input type="text" inputmode="numeric" class="ov" data-ov="${r.key}" value="${r.need?fmt(r.need):""}" placeholder="${fmt(r.need)}" title="Впишите своё значение — расчёт пойдёт от него">
-        ${r.hasOv?`<span class="muted" title="Своё значение — вписано вручную">✎</span>`:""}
+        <span class="ovwrap"><input type="text" inputmode="numeric" class="ov" data-ov="${r.key}" value="${r.need?fmt(r.need):""}" placeholder="${fmt(r.need)}" title="${r.hasOv?"Вписано вручную — нажмите ✕, чтобы вернуть расчёт по рецепту":"Впишите своё значение — расчёт пойдёт от него"}">${r.hasOv?`<button class="ovclr" data-clr="${r.key}" title="Убрать вписанное вручную — вернуть расчёт по рецепту">✕</button>`:""}</span>
       </td>
-      <td class="num" data-l=""><button class="del" data-delres="${r.key}" data-src="${r.src||"recipe"}" title="${r.src==="manual"?"Удалить этот ресурс":"Ресурс из рецепта — убрать из таблицы (вернуть кнопкой «скрытые»)"}">🗑</button></td>`;
+      <td class="num" data-l=""><button class="del" data-delres="${r.key}" data-src="${r.src||"recipe"}" title="${r.src==="manual"?"Удалить этот ресурс насовсем":"Удалить ресурс: убрать его из таблицы и из всех рецептов. Вернуть потом можно только заново"}">🗑</button></td>`;
     tb.appendChild(tr);
   });
   if(!A.rows.length) tb.innerHTML = `<tr><td colspan="4" class="muted">Пока пусто — добавьте изделие или нажмите «➕ Ресурс».</td></tr>`;
@@ -788,12 +1157,6 @@ function update(){
     <td></td>`;
   tf.appendChild(t);
 
-  /* --- кнопка «скрытые» --- */
-  const hid = Object.keys(st.hidden||{});
-  const bsh = document.getElementById("btnShowHidden");
-  bsh.style.display = hid.length ? "" : "none";
-  bsh.textContent = `👁 скрытые (${hid.length})`;
-
   /* --- подсказки по списку ресурсов --- */
   const dl = document.getElementById("dlRes");
   dl.innerHTML = A.rows.map(r=>`<option value="${escapeAttr(r.name)}">`).join("");
@@ -801,10 +1164,12 @@ function update(){
   /* --- рецепты: итог двумя вариантами --- */
   const rAxeT = rubyOf(eAxeT), rBothT = rubyOf(eBothT);
   const tb2 = document.getElementById("totalBar");
-  tb2.innerHTML = (eAxeT || eBothT)
+  tb2.innerHTML = (eAxeT || eBothT || pl.cnt)
     ? `Все рецепты вместе:<br>
        <b>Топор + Мастерская 3×4:</b> ⚡ ${fmt(eBothT)} = <b style="color:var(--acc2)">💎 ${fmt(rBothT)}</b><br>
        <b>Топор без мастерской:</b> ⚡ ${fmt(eAxeT)} = <b>💎 ${fmt(rAxeT)}</b>
+       ${pl.cnt?`<br><b>Одиночные в топор:</b> ${pl.e?`⚡ ${fmt(pl.e)} = <b>💎 ${fmt(pl.r)}</b>`:`<span class="muted">впишите ⚡ цену за 1 шт. в блоке «Одиночные ресурсы»</span>`}`:""}
+       ${pl.cnt&&pl.e?`<br><b>Всего с одиночными:</b> 💎 ${fmt(rBothT+pl.r)} (с мастерской) · 💎 ${fmt(rAxeT+pl.r)} (без мастерской)`:""}
        ${tG?`<br><span class="muted">игра просит за всё 💎 ${fmt(tG)}</span>`:""}`
     : `Впишите <b>⚡ цену за 1 шт.</b> слева — посчитаю, сколько стоят все рецепты целиком.`;
 
@@ -815,8 +1180,6 @@ function update(){
       const ings = (it.ing||[]).filter(g=>ci(g.per));
       if(!ings.length){ box.innerHTML = `<span class="dim">ресурсы не указаны</span>`; }
       else{
-        const game = ci(it.rub);
-
         const V = [
           {name:"Топор + Мастерская 3×4", units:c.madeYes, axe:true,
            hint:"сначала рубишь в топор — ударов в 2 раза меньше, потом нарубленное идёт в мастерскую 3×4"},
@@ -832,21 +1195,19 @@ function update(){
         const bestIdx = hasEn ? V.reduce((b,v,i)=> v.r < V[b].r ? i : b, 0) : -1;
 
         /* как сделать — словами */
-        let craftWork, craftPlain;
+        let craftWork;
         if(c.mode === "single"){
-          craftWork = craftPlain = `просто по одному — <b>${fmt(c.qty)}</b> шт., пачками не надо`;
+          craftWork = `просто по одному — <b>${fmt(c.qty)}</b> шт., пачками не надо`;
         }else if(c.mode === "exact"){
           const freeW = Math.max(0, ci(c.qty) - ci(c.madeYes));
           craftWork = `<b>${c.bYes}</b> ${plural(c.bYes,"пачка","пачки","пачек")} × ${Y} (в пачке крафтишь ${st.pack}, мастерская добавляет +1)` +
             (c.singlesYes ? ` + <b>${c.singlesYes}</b> ${plural(c.singlesYes,"одиночная","одиночные","одиночных")}` : "") +
             ` = <b>${fmt(c.qty)}</b> шт. Готово! Тебе самой сделать <b>${fmt(c.madeYes)}</b> шт., ещё <b>${fmt(freeW)}</b> шт. даст мастерская.`;
-          craftPlain = `<b>${c.bNo}</b> ${plural(c.bNo,"пачка","пачки","пачек")} по ${st.pack} шт. + ещё <b>${c.singlesNo}</b> шт. по одному = ровно <b>${fmt(c.qty)}</b> шт., делать всё самой и лишних не будет`;
         }else{
           craftWork = `<b>${c.bYes}</b> ${plural(c.bYes,"пачка","пачки","пачек")} дадут <b>${fmt(c.gotYes)}</b> шт. — тебе сделать <b>${fmt(c.madeYes)}</b> шт.`;
-          craftPlain = `<b>${c.bNo}</b> ${plural(c.bNo,"пачка","пачки","пачек")} по ${st.pack} шт. = <b>${fmt(c.madeNo)}</b> шт.${c.madeNo>c.qty?` (на ${fmt(c.madeNo-c.qty)} лишних)`:``}`;
         }
 
-        /* таблица двух вариантов */
+        /* таблица двух вариантов (второй можно свернуть кнопкой в его строке) */
         let varTable;
         if(!hasEn){
           varTable = `<div class="pl"><span class="dim">Стоимость:</span> впишите слева <b>⚡ цену за 1 шт.</b> — посчитаю энергии и рубины по каждому варианту</div>`;
@@ -856,39 +1217,28 @@ function update(){
             return `${rn(g.name)} <b>${fmt(p.amt)}</b><br>
                     <span class="sub">${v.axe?"топором:":"рубить просто так:"} ${fmt(p.chops)} ${plural(p.chops,"удар","удара","ударов")} × ${fmt(p.en)} = ${fmt(p.e)} ⚡</span>`;
           }).join("<br>");
+          const folded = k => (k === 1 && it.fold);
           varTable = `<table class="vt">
             <tr class="vth"><th>Вариант</th><th>Что собрать — и сколько раз рубить</th><th class="num">⚡ Энергия</th><th class="num">💎 Рубины</th></tr>
-            ${V.map((v,k)=>`<tr class="${k===bestIdx?"best":""}">
-              <td class="vname" title="${v.hint}">${v.name}</td>
+            ${V.map((v,k)=> folded(k) ? "" : `<tr class="${k===bestIdx?"best":""}">
+              <td class="vname" title="${v.hint}">${v.name}${k===1?` <button class="foldb" data-fold="${i}" title="Убрать эту строку из вида">свернуть ▾</button>`:""}</td>
               <td class="rescell">${cell(v)}</td>
               <td class="num" data-l="⚡ Энергия">${fmt(v.e)}</td>
               <td class="num" data-l="💎 Рубины">${fmt(v.r)}</td>
             </tr>`).join("")}
-          </table>`;
-        }
-
-        let gameLine = "";
-        if(game && bestIdx >= 0){
-          const best = V[bestIdx];
-          gameLine = `<div class="pl"><span class="dim">Игра просит:</span> 💎 ${fmt(game)} → ${
-            game < best.r ? `<span class="g">рубинами игры дешевле на ${fmt(best.r-game)}</span>` :
-            game > best.r ? `<span class="bad">энергией дешевле на ${fmt(game-best.r)}</span>` :
-                            "поровну"} <span class="dim">(сравнено с лучшим вариантом «${best.name}»)</span></div>`;
-        }else if(!game){
-          gameLine = `<div class="pl"><span class="dim">Игра просит:</span> впишите <b>💎 рубинов за закрытие</b> в шапке рецепта</div>`;
+          </table>
+          ${it.fold?`<div class="foldline">Вариант «Топор без мастерской» свёрнут.<button data-unfold="${i}">▸ показать</button></div>`:""}`;
         }
 
         box.innerHTML = `
           <div class="pl"><b>Нужно изделий: ${fmt(c.qty)} шт.</b></div>
           ${varTable}
-          <div class="pl"><span class="dim">Как сделать в мастерской 3×4:</span> ${craftWork}</div>
-          ${c.mode==="single" ? "" : `<div class="pl"><span class="dim">Как сделать без мастерской:</span> ${craftPlain}</div>`}
-          ${gameLine}`;
+          <div class="pl"><span class="dim">Как сделать в мастерской 3×4:</span> ${craftWork}</div>`;
       }
     }
     (it.ing||[]).forEach((g,j)=>{
       const c = document.querySelector(`.cell[data-tot="${i}:${j}"]`);
-      if(c) c.textContent = fmt(ci(g.per)*ci(it.qty));
+      if(c) c.textContent = fmt(ci(g.per) * itemCalc(it).madeYes);
     });
     /* цвета ресурсов в карточках */
     (it.ing||[]).forEach((g,j)=>{
@@ -945,16 +1295,20 @@ function update(){
   tb.querySelectorAll("[data-delres]").forEach(b=>{
     b.onclick = ()=>{
       const k = b.dataset.delres;
-      if(b.dataset.src === "manual"){
-        const i = (st.manual||[]).findIndex(m=>keyOf(m)===k);
-        if(i >= 0) st.manual.splice(i,1);
-        delete st.ov[k]; delete st.done[k]; delete st.en[k];
-        save("ресурс удалён");
-      }else{
-        st.hidden[k] = true;
-        save("ресурс скрыт из таблицы (вернуть — кнопка «👁 скрытые»)");
-      }
-      renderItems(); update();
+      const nm = Array.prototype.find.call(document.querySelectorAll("#tSum .rname"), i=>i.dataset.rn === k);
+      const name = nm ? nm.value.trim() : k;
+      if(!confirm(`Удалить «${name}» насовсем?\n\nРесурс уберётся из таблицы и из всех рецептов, где используется.\nВернуть его потом можно только заново.`)) return;
+      /* убрать из ручного списка — всегда, даже если ресурс пришёл из рецепта */
+      const mi = (st.manual||[]).findIndex(m=>keyOf(m)===k);
+      if(mi >= 0) st.manual.splice(mi,1);
+      /* убрать ресурс из всех рецептов насовсем */
+      st.items.forEach(it=>{ it.ing = (it.ing||[]).filter(g=>keyOf(g.name) !== k); });
+      /* и из одиночных ресурсов */
+      if(Array.isArray(st.plain)) st.plain = st.plain.filter(p=>keyOf(p.name) !== k);
+      delete st.ov[k]; delete st.done[k]; delete st.en[k]; delete st.col[k];
+      if(st.hidden) delete st.hidden[k];
+      save("«" + name + "» удалён насовсем");
+      renderItems(); renderPlain(); update();
     };
   });
 
@@ -993,16 +1347,32 @@ document.getElementById("btnAddRes").onclick = ()=>{
   const inp = Array.prototype.find.call(document.querySelectorAll("#tSum .rname"), i=>i.dataset.rn === keyOf(n));
   if(inp){ inp.focus(); inp.select(); }
 };
-document.getElementById("btnShowHidden").onclick = ()=>{
-  st.hidden = {};
-  update(); save("скрытые ресурсы возвращены");
-};
 document.getElementById("btnAddItem").onclick = ()=>{
-  st.items.push({name:"Новое изделие", qty:1, rub:0, ing:[{name:"", per:1}]});
+  st.items.push({name:"", qty:1, rub:0, ing:[{name:"", per:1}]});
   renderItems(); update(); save("изделие добавлено");
   const rows = document.querySelectorAll("#items .item .nm");
   if(rows.length) rows[rows.length-1].focus();
 };
+/* фестивали */
+document.getElementById("festSel").onchange = e=>festSwitch(e.target.value);
+document.getElementById("festAdd").onclick = ()=>festAdd();
+document.getElementById("festRen").onclick = ()=>festRen();
+document.getElementById("festDel").onclick = ()=>festDel();
+/* перестановка блоков и рецептов кнопками ↑↓ */
+document.addEventListener("click", e=>{
+  const t = e.target;
+  if(!t || !t.closest) return;
+  const mb = t.closest("[data-move]");
+  if(mb){ const [k,d] = mb.dataset.move.split(":"); moveBox(k, +d); return; }
+  const mc = t.closest("[data-mcol]");
+  if(mc){ moveBoxCol(mc.dataset.mcol); return; }
+  const ib = t.closest("[data-imove]");
+  if(ib){ const [i,d] = ib.dataset.imove.split(":"); moveItem(+i, +d); return; }
+  const fb = t.closest("[data-fold]");
+  if(fb){ const it = st.items[+fb.dataset.fold]; if(it){ it.fold = true; update(); save("строка «Топор без мастерской» свёрнута"); } return; }
+  const ub = t.closest("[data-unfold]");
+  if(ub){ const it = st.items[+ub.dataset.unfold]; if(it){ it.fold = false; update(); save("строка показана"); } return; }
+});
 document.getElementById("setPack").oninput = e=>{ st.pack = ci(e.target.value)||1; update(); save(); };
 document.getElementById("setBoost").oninput = e=>{ st.boost = ci(e.target.value); update(); save(); };
 document.getElementById("setCr").oninput = e=>{ st.cr = ci(e.target.value)||100; update(); save(); };
@@ -1012,7 +1382,8 @@ document.getElementById("btnPrint").onclick = ()=>window.print();
 document.getElementById("btnReset").onclick = ()=>{
   if(confirm("Вернуть набор данных, зашитый в файл (3 рецепта: Стакан, Веер, Маска)?")){
     st = JSON.parse(JSON.stringify(DEFAULT));
-    syncSettings(); renderItems(); update(); save("загружен пример");
+    festsEnsure();
+    syncSettings(); renderFestBar(); renderItems(); update(); save("загружен пример");
   }
 };
 document.getElementById("btnExport").onclick = ()=>{
@@ -1030,7 +1401,8 @@ document.getElementById("fileIn").onchange = e=>{
       const p = JSON.parse(rd.result);
       if(!Array.isArray(p.items)) throw new Error("нет поля items");
       st = Object.assign({}, DEFAULT, p);
-      syncSettings(); renderItems(); update(); save("импорт выполнен");
+      festsEnsure();
+      syncSettings(); renderFestBar(); renderItems(); update(); save("импорт выполнен");
     }catch(err){ alert("Не удалось прочитать файл: " + err.message); }
   };
   rd.readAsText(f); e.target.value = "";
@@ -1115,11 +1487,24 @@ window.addEventListener("scroll", e=>{
   ddClose();
 }, true);
 
+/* --- одиночные ресурсы: добавить строку --- */
+document.getElementById("plainAdd").onclick = ()=>{
+  plainRows().push({name:"", qty:0});
+  renderPlain(); update(); save("ресурс добавлен");
+  const ins = document.querySelectorAll("#plainList input[data-pn]");
+  if(ins.length) ins[ins.length-1].focus();
+};
+
 /* ============ старт ============ */
 load();
+festsEnsure();
+applyBord();
+fixCols();
 syncSettings();
+renderFestBar();
 renderItems();
 update();
+bindBoxDrag();
 </script>
 </body>
 </html>
