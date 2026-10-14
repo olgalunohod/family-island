@@ -1592,20 +1592,55 @@ async function syncPull(){
   syncBusy = false;
 }
 
-/* подключить по ключу */
+/* подключить по ключу: ТОКЕН@ГИСТ или просто ТОКЕН (облако найдётся само) */
 async function syncConnect(){
-  const raw = document.getElementById("syncKey").value.trim();
+  const raw0 = document.getElementById("syncKey").value || "";
+  /* телефон при копировании любит подмешать пробелы, переносы, кавычки и невидимые символы — вычищаем */
+  const raw = raw0.replace(/[\s"'`<>]/g, "").replace(/[\u200b-\u200f\u202a-\u202e]/g, "");
   const i = raw.indexOf("@");
-  if(!raw || i < 1){ syncStatus("ключ не похож на правильный", "err"); return; }
-  const cfg = {tok: raw.slice(0, i), gid: raw.slice(i + 1).trim(), at: 0, led: 0};
+  const tok = i >= 0 ? raw.slice(0, i) : raw;
+  const gid = i >= 0 ? raw.slice(i + 1) : "";
+  if(!tok){ syncStatus("ключ пустой", "err"); return; }
+  if(!/^[A-Za-z0-9_]+$/.test(tok) || (gid && !/^[A-Za-z0-9]+$/.test(gid))){
+    syncStatus("в ключе лишние символы — видимо, скопировалось не то. Проще переслать себе ссылку-ключ и тапнуть по ней.", "err"); return;
+  }
   syncStatus("проверяю ключ…", "");
+  const H = {"Authorization": "token " + tok, "Accept": "application/vnd.github+json"};
   try{
-    const r = await fetch("https://api.github.com/gists/" + cfg.gid, {headers: {"Authorization": "token " + cfg.tok, "Accept": "application/vnd.github+json"}});
-    if(!r.ok) throw new Error(r.status === 404 ? "облако не найдено" : ("GitHub ответил " + r.status));
-    const g = await r.json();
+    let g = null;
+    if(gid){
+      const r = await fetch("https://api.github.com/gists/" + gid, {headers: H});
+      if(r.status === 401) throw new Error("__401");
+      if(!r.ok) throw new Error(r.status === 404 ? "облако не найдено" : ("GitHub ответил " + r.status));
+      g = await r.json();
+    } else {
+      /* ключ без номера облака — ищем наше облако среди гистов этого аккаунта */
+      const r = await fetch("https://api.github.com/gists?per_page=100", {headers: H});
+      if(r.status === 401) throw new Error("__401");
+      if(!r.ok) throw new Error("GitHub ответил " + r.status);
+      const list = await r.json();
+      const hit = (list || []).find(x => x.files && x.files[SYNCFILE]);
+      if(hit) g = await (await fetch("https://api.github.com/gists/" + hit.id, {headers: H})).json();
+    }
+    if(!g){
+      /* облака ещё нет — создаём и кладём туда то, что сейчас здесь */
+      if(st && st.fests && st.cur && st.fests[st.cur]) st.fests[st.cur] = festSnap();
+      const at = Date.now();
+      const rr = await fetch("https://api.github.com/gists", {method: "POST",
+        headers: Object.assign({"Content-Type": "application/json"}, H),
+        body: JSON.stringify({description: "Family Island — данные калькулятора (синхронизация)", public: false,
+          files: {[SYNCFILE]: {content: JSON.stringify({at: at, st: st})}}})});
+      if(!rr.ok) throw new Error("GitHub ответил " + rr.status);
+      g = await rr.json();
+      syncCfg = {tok: tok, gid: g.id, at: Date.now(), led: 0};
+      syncSaveCfg(); syncUI();
+      syncStatus("подключено — создано новое облако", "ok");
+      return;
+    }
     const f = g.files && g.files[SYNCFILE];
     const cloud = (f && f.content) ? JSON.parse(f.content) : null;
-    syncCfg = cfg; syncSaveCfg(); syncUI();
+    syncCfg = {tok: tok, gid: g.id, at: 0, led: 0};
+    syncSaveCfg(); syncUI();
     if(cloud && cloud.st && Array.isArray(cloud.st.items)){
       syncCfg.at = cloud.at || 0; syncSaveCfg();
       applyingCloud = true;
@@ -1620,7 +1655,11 @@ async function syncConnect(){
       syncPush();
     }
   }catch(e){
-    syncStatus("не получилось: " + e.message, "err");
+    if(e.message === "__401"){
+      syncStatus("GitHub не принял ключ (401) — обычно копируется не весь или с ошибкой (сейчас в поле " + raw.length + " символов). Проще переслать себе ссылку-ключ и тапнуть по ней.", "err");
+    } else {
+      syncStatus("не получилось: " + e.message, "err");
+    }
   }
 }
 function syncDisconnect(){
@@ -1645,7 +1684,20 @@ document.getElementById("syncDis").onclick = ()=>syncDisconnect();
 document.getElementById("syncKey").addEventListener("keydown", e=>{ if(e.key === "Enter") syncConnect(); });
 syncLoadCfg();
 syncUI();
-if(syncCfg){ syncStatus("проверяю облако…", ""); syncPull(); }
+/* ссылка-ключ: .../#sync=ТОКЕН — открыли на новом устройстве, вставлять ничего не надо */
+let syncFromLink = false;
+(function(){
+  let m = null;
+  try{ m = location.hash.match(/^#sync=(.+)$/); }catch(e){}
+  if(!m) return;
+  let key = "";
+  try{ key = decodeURIComponent(m[1]); }catch(e){ key = m[1]; }
+  document.getElementById("syncKey").value = key;
+  try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){}
+  syncFromLink = true;
+  syncConnect();
+})();
+if(!syncFromLink && syncCfg){ syncStatus("проверяю облако…", ""); syncPull(); }
 document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) syncPull(); });
 window.addEventListener("focus", ()=>syncPull());
 </script>
