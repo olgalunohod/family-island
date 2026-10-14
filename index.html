@@ -31,6 +31,12 @@ h1 span{font-size:23px}
 
 .setbar{display:flex;flex-wrap:wrap;gap:9px 16px;align-items:center;font-size:13px}
 .setbar label{color:var(--dim);display:flex;align-items:center;gap:6px}
+.syncrow{display:flex;flex-wrap:wrap;gap:7px 10px;align-items:center;margin-bottom:5px;font-size:14px}
+#syncKey{flex:1 1 190px;min-width:150px}
+#syncStatus{font-size:12px}
+#syncStatus.ok{color:var(--acc2)}
+#syncStatus.err{color:var(--bad)}
+input[type=password]{background:#0e1a30;border:1px solid var(--line);color:var(--txt);border-radius:7px;padding:5px 7px;font-size:13px}
 input[type=number],input[type=text]{background:#0e1a30;border:1px solid var(--line);color:var(--txt);border-radius:7px;padding:5px 7px;font-size:13px}
 input[type=number]{width:66px;text-align:right}
 input:focus,select:focus{outline:none;border-color:var(--acc)}
@@ -291,6 +297,21 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
     </div>
   </div>
 
+  <!-- ===== СИНХРОНИЗАЦИЯ (облако) ===== -->
+  <div class="box">
+    <div class="syncrow">
+      <b>☁️ Синхронизация</b>
+      <span class="muted" id="syncStatus">выключена — данные только на этом устройстве</span>
+    </div>
+    <p class="note">С включённой синхронизацией данные одинаковые на всех ваших устройствах: поправили на компьютере — открываете на телефоне, уже новое. Что сохранилось последним, то и актуально.</p>
+    <div class="toolbar">
+      <input type="text" id="syncKey" placeholder="ключ синхронизации" autocomplete="off" spellcheck="false">
+      <button class="primary" id="syncConn">Подключить</button>
+      <button id="syncDis" style="display:none">Отключить</button>
+    </div>
+    <p class="note">Ключ — как пароль: у кого он есть, тот может читать и менять ваши данные. Другу синхронизация не нужна: без ключа данные остаются локальными.</p>
+  </div>
+
   <div class="vbar" id="vbar"></div>
 
   <div class="cols">
@@ -384,7 +405,7 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
 
   </div><!-- /cols -->
 
-  <footer>Все данные хранятся только в вашем браузере.</footer>
+  <footer>Все данные хранятся в вашем браузере — и в вашем личном облаке, если включена синхронизация.</footer>
 </div>
 
 <datalist id="dlRes"></datalist>
@@ -457,6 +478,7 @@ function save(msg){
   try{
     if(st && st.fests && st.cur && st.fests[st.cur]) st.fests[st.cur] = festSnap();  /* текущий фестиваль — всегда свежий */
     localStorage.setItem(LS, JSON.stringify(st));
+    if(syncCfg && !applyingCloud){ syncCfg.led = Date.now(); syncSaveCfg(); syncSchedule(); }  /* данные уйдут в облако через 3 сек тишины */
     if(msg){ const el = document.getElementById("saveMsg"); el.textContent = "✅ " + msg;
       clearTimeout(save._t); save._t = setTimeout(()=>el.textContent = "", 2200); }
   }catch(e){}
@@ -1495,6 +1517,118 @@ document.getElementById("plainAdd").onclick = ()=>{
   if(ins.length) ins[ins.length-1].focus();
 };
 
+/* ============ синхронизация: облако на GitHub Gist ============
+   Ключ — строка вида ТОКЕН@ID-ГИСТА. Хранится отдельно от данных (своим ключом localStorage),
+   поэтому в экспорт и другим людям не попадает. Без ключа ничего не отправляется. */
+const SYNCLS = "fi_sync_cfg_v1";
+const SYNCFILE = "family-island-data.json";
+let syncCfg = null;        /* {tok, gid, at, led} — at: время данных в облаке, led: время последней своей правки */
+let syncTimer = null, syncBusy = false, applyingCloud = false;
+
+function syncLoadCfg(){ try{ const r = localStorage.getItem(SYNCLS); if(r) syncCfg = JSON.parse(r); }catch(e){} 
+  if(!syncCfg || typeof syncCfg !== "object" || !syncCfg.tok || !syncCfg.gid) syncCfg = null; }
+function syncSaveCfg(){ try{ if(syncCfg) localStorage.setItem(SYNCLS, JSON.stringify(syncCfg)); else localStorage.removeItem(SYNCLS); }catch(e){} }
+function syncStatus(txt, cls){ const el = document.getElementById("syncStatus"); if(!el) return;
+  el.textContent = txt; el.className = cls || ""; }
+function syncHdrs(){ return { "Authorization": "token " + syncCfg.tok, "Accept": "application/vnd.github+json" }; }
+function syncUI(){
+  const on = !!syncCfg;
+  document.getElementById("syncKey").style.display = on ? "none" : "";
+  document.getElementById("syncConn").style.display = on ? "none" : "";
+  document.getElementById("syncDis").style.display = on ? "" : "none";
+}
+
+/* сохранить в облако */
+async function syncPush(){
+  if(!syncCfg || syncBusy) return;
+  syncBusy = true;
+  try{
+    if(st && st.fests && st.cur && st.fests[st.cur]) st.fests[st.cur] = festSnap();
+    const at = Date.now();
+    const r = await fetch("https://api.github.com/gists/" + syncCfg.gid, {
+      method: "PATCH",
+      headers: Object.assign({"Content-Type": "application/json"}, syncHdrs()),
+      body: JSON.stringify({files: { [SYNCFILE]: { content: JSON.stringify({at: at, st: st}) } }})
+    });
+    if(!r.ok) throw new Error("GitHub ответил " + r.status);
+    syncCfg.at = at; syncCfg.led = 0; syncSaveCfg();
+    syncStatus("сохранено в облако " + new Date().toLocaleTimeString(), "ok");
+  }catch(e){ syncStatus("не удалось сохранить: " + e.message, "err"); }
+  syncBusy = false;
+}
+function syncSchedule(){ if(!syncCfg) return; clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 3000); }
+
+/* загрузить из облака (на старте и когда возвращаетесь на вкладку) */
+async function syncPull(){
+  if(!syncCfg || syncBusy) return;
+  syncBusy = true;
+  try{
+    const r = await fetch("https://api.github.com/gists/" + syncCfg.gid, {headers: syncHdrs()});
+    if(!r.ok) throw new Error("GitHub ответил " + r.status);
+    const g = await r.json();
+    const f = g.files && g.files[SYNCFILE];
+    if(!f || !f.content){ syncBusy = false; syncStatus("в облаке пока пусто — сохраню отсюда", ""); syncPush(); return; }
+    const cloud = JSON.parse(f.content);
+    if(!cloud || !cloud.st || !Array.isArray(cloud.st.items)){ syncBusy = false; return; }
+    if(cloud.at > (syncCfg.at || 0)){
+      /* свои правки новее облачных — отправим свои, облако не трогаем */
+      if((syncCfg.led || 0) > (syncCfg.at || 0) && syncCfg.led > cloud.at){
+        syncBusy = false;
+        syncStatus("правки на этом устройстве новее — отправляю в облако", "");
+        syncPush(); return;
+      }
+      applyingCloud = true;
+      st = Object.assign({}, DEFAULT, cloud.st);
+      festsEnsure(); applyBord(); fixCols();
+      try{ localStorage.setItem(LS, JSON.stringify(st)); }catch(e){}
+      syncSettings(); renderFestBar(); renderItems(); renderPlain(); update();
+      applyingCloud = false;
+      syncCfg.at = cloud.at; syncSaveCfg();
+      syncStatus("загружено из облака " + new Date().toLocaleTimeString(), "ok");
+    } else {
+      syncStatus("синхронизировано " + new Date().toLocaleTimeString(), "ok");
+    }
+  }catch(e){ syncStatus("нет связи с облаком: " + e.message, "err"); }
+  syncBusy = false;
+}
+
+/* подключить по ключу */
+async function syncConnect(){
+  const raw = document.getElementById("syncKey").value.trim();
+  const i = raw.indexOf("@");
+  if(!raw || i < 1){ syncStatus("ключ не похож на правильный", "err"); return; }
+  const cfg = {tok: raw.slice(0, i), gid: raw.slice(i + 1).trim(), at: 0, led: 0};
+  syncStatus("проверяю ключ…", "");
+  try{
+    const r = await fetch("https://api.github.com/gists/" + cfg.gid, {headers: {"Authorization": "token " + cfg.tok, "Accept": "application/vnd.github+json"}});
+    if(!r.ok) throw new Error(r.status === 404 ? "облако не найдено" : ("GitHub ответил " + r.status));
+    const g = await r.json();
+    const f = g.files && g.files[SYNCFILE];
+    const cloud = (f && f.content) ? JSON.parse(f.content) : null;
+    syncCfg = cfg; syncSaveCfg(); syncUI();
+    if(cloud && cloud.st && Array.isArray(cloud.st.items)){
+      syncCfg.at = cloud.at || 0; syncSaveCfg();
+      applyingCloud = true;
+      st = Object.assign({}, DEFAULT, cloud.st);
+      festsEnsure(); applyBord(); fixCols();
+      try{ localStorage.setItem(LS, JSON.stringify(st)); }catch(e){}
+      syncSettings(); renderFestBar(); renderItems(); renderPlain(); update();
+      applyingCloud = false;
+      syncStatus("подключено — данные загружены из облака", "ok");
+    } else {
+      syncStatus("подключено — отправляю данные в облако", "");
+      syncPush();
+    }
+  }catch(e){
+    syncStatus("не получилось: " + e.message, "err");
+  }
+}
+function syncDisconnect(){
+  clearTimeout(syncTimer);
+  syncCfg = null; syncSaveCfg(); syncUI();
+  syncStatus("выключена — данные только на этом устройстве", "");
+}
+
 /* ============ старт ============ */
 load();
 festsEnsure();
@@ -1505,6 +1639,15 @@ renderFestBar();
 renderItems();
 update();
 bindBoxDrag();
+/* синхронизация */
+document.getElementById("syncConn").onclick = ()=>syncConnect();
+document.getElementById("syncDis").onclick = ()=>syncDisconnect();
+document.getElementById("syncKey").addEventListener("keydown", e=>{ if(e.key === "Enter") syncConnect(); });
+syncLoadCfg();
+syncUI();
+if(syncCfg){ syncStatus("проверяю облако…", ""); syncPull(); }
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) syncPull(); });
+window.addEventListener("focus", ()=>syncPull());
 </script>
 </body>
 </html>
