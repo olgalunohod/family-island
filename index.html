@@ -338,7 +338,7 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
       <button class="nv" id="festDel" title="Удалить этот фестиваль">🗑</button>
     </div>
     <p class="note">Вбейте <b>все ресурсы</b> и укажите <b>⚡ сколько стоит 1 шт.</b> Квадратик слева — <b>цвет ресурса</b> (нажмите, чтобы поменять), он же будет в рецептах. Название правится прямо в таблице — оно поменяется и в рецептах.
-      Столбец «Нужно» показывает количество <b>с учётом мастерской 3×4</b>. Если впишете своё число, рядом появится ✕ — он возвращает расчёт по рецепту. 🗑 — удалить ресурс насовсем, вместе с рецептами, где он используется.</p>
+      Столбец «Нужно» показывает количество <b>с учётом мастерской 3×4 и одиночных ресурсов</b> — ИТОГО внизу считает всё вместе. Если впишете своё число, рядом появится ✕ — он возвращает расчёт по рецепту. Стрелки <b>↑↓</b> меняют порядок строк, 🗑 — удалить ресурс насовсем, вместе с рецептами, где он используется.</p>
     <div class="scroll">
       <table id="tSum">
         <thead><tr>
@@ -488,7 +488,7 @@ function save(msg){
    У каждого фестиваля — свой полный набор: ресурсы, цены, рецепты, одиночные, настройки.
    Текущий набор живёт в корне st (как раньше), а в st.fests[name] лежит его снимок.
    Переключили фестиваль — снимок текущего записан, выбранный развёрнут в корень. */
-const FESTKEYS = ["pack","boost","mode","cr","ce","en","ov","done","manual","hidden","col","items","plain","bord"];
+const FESTKEYS = ["pack","boost","mode","cr","ce","en","ov","done","manual","hidden","col","items","plain","resOrder","bord"];
 function festSnap(){
   const o = {};
   FESTKEYS.forEach(k=>{ o[k] = JSON.parse(JSON.stringify(st[k] === undefined ? null : st[k])); });
@@ -503,6 +503,8 @@ function festApply(snap){
   });
   if(!Array.isArray(st.items)) st.items = [];
   if(!Array.isArray(st.plain)) st.plain = [];
+  /* порядок строк таблицы цен — свой у каждого фестиваля */
+  st.resOrder = Array.isArray(snap.resOrder) ? snap.resOrder : [];
 }
 function festsEnsure(){
   if(!st.fests || typeof st.fests !== "object" || !Object.keys(st.fests).length){
@@ -654,6 +656,17 @@ function moveItem(i, dir){
   const t = st.items[i]; st.items[i] = st.items[j]; st.items[j] = t;
   renderItems(); update(); save("рецепты переставлены");
 }
+/* кнопки ↑↓ в таблице «Ресурсы и цены» — свой порядок для каждого фестиваля */
+function moveRes(key, dir){
+  const rows = aggregate().rows;
+  const ord = Array.isArray(st.resOrder) ? st.resOrder.slice() : [];
+  rows.forEach(r=>{ if(ord.indexOf(r.key) < 0) ord.push(r.key); });
+  const i = ord.indexOf(key), j = i + dir;
+  if(i < 0 || j < 0 || j >= ord.length) return;
+  const t = ord[i]; ord[i] = ord[j]; ord[j] = t;
+  st.resOrder = ord;
+  update(); save("ресурсы переставлены");
+}
 let dragItem = null;
 function bindItemDrag(){
   const list = document.getElementById("items");
@@ -755,6 +768,18 @@ function aggregate(){
     map.set(k, {key:k, name:(n||"").trim(), perMin:0, need:0, src:"manual"});
   });
 
+  /* одиночные ресурсы (блок «Одиночные») — их «нужно» тоже входит в графу и в ИТОГО */
+  let plainNeed = 0;
+  plainRows().forEach(p=>{
+    const k = keyOf(p.name), q = ci(p.qty);
+    if(!k || !q) return;
+    plainNeed += q;
+    if(!map.has(k)) map.set(k, {key:k, name:(p.name||"").trim(), perMin:0, need:0, src:"manual"});
+    map.get(k).need += q;
+  });
+
+  const ord = Array.isArray(st.resOrder) ? st.resOrder : [];
+  const pos = k => { const i = ord.indexOf(k); return i < 0 ? Infinity : i; };
   const rows = [...map.values()]
     .map(r=>{
     const ov = st.ov[r.key];
@@ -766,7 +791,7 @@ function aggregate(){
     const en = ci(st.en && st.en[r.key]);
     return Object.assign({}, r, {hasOv, need, plan, done, left, en,
       energy:left*en, ruby:rubyOf(left*en)});
-  }).sort((a,b)=> b.need - a.need);
+  }).sort((a,b)=> (pos(a.key) - pos(b.key)) || (b.need - a.need));
 
   const T = rows.reduce((s,r)=>({
     need:s.need+r.need, spendNo:s.spendNo+r.plan.spendNo, spendYes:s.spendYes+r.plan.spendYes,
@@ -776,6 +801,8 @@ function aggregate(){
   T.packsNo = rows.reduce((s,r)=>s+r.plan.packsNo, 0);
   T.packsYes = rows.reduce((s,r)=>s+r.plan.packsYes, 0);
   T.ruby = rubyOf(T.energy);
+  T.plainNeed = plainNeed;
+  T.plainCnt = plainRows().filter(p=>keyOf(p.name) && ci(p.qty)).length;
   return {rows, T, totalQty, items:st.items.length};
 }
 
@@ -822,6 +849,7 @@ function renameResource(oldKey, newName){
     }
   });
   (st.plain||[]).forEach(p=>{ if(keyOf(p.name) === ok) p.name = (newName||"").trim(); });
+  if(Array.isArray(st.resOrder)){ const i = st.resOrder.indexOf(ok); if(i >= 0) st.resOrder[i] = nk; }
   return true;
 }
 
@@ -1168,13 +1196,16 @@ function update(){
       <td class="num" data-l="Нужно">
         <span class="ovwrap"><input type="text" inputmode="numeric" class="ov" data-ov="${r.key}" value="${r.need?fmt(r.need):""}" placeholder="${fmt(r.need)}" title="${r.hasOv?"Вписано вручную — нажмите ✕, чтобы вернуть расчёт по рецепту":"Впишите своё значение — расчёт пойдёт от него"}">${r.hasOv?`<button class="ovclr" data-clr="${r.key}" title="Убрать вписанное вручную — вернуть расчёт по рецепту">✕</button>`:""}</span>
       </td>
-      <td class="num" data-l=""><button class="del" data-delres="${r.key}" data-src="${r.src||"recipe"}" title="${r.src==="manual"?"Удалить этот ресурс насовсем":"Удалить ресурс: убрать его из таблицы и из всех рецептов. Вернуть потом можно только заново"}">🗑</button></td>`;
+      <td class="num" data-l="">
+        <button class="nv" data-mres="${r.key}:-1" title="Переместить ресурс вверх">↑</button>
+        <button class="nv" data-mres="${r.key}:1" title="Переместить ресурс вниз">↓</button>
+        <button class="del" data-delres="${r.key}" data-src="${r.src||"recipe"}" title="${r.src==="manual"?"Удалить этот ресурс насовсем":"Удалить ресурс: убрать его из таблицы и из всех рецептов. Вернуть потом можно только заново"}">🗑</button></td>`;
     tb.appendChild(tr);
   });
   if(!A.rows.length) tb.innerHTML = `<tr><td colspan="4" class="muted">Пока пусто — добавьте изделие или нажмите «➕ Ресурс».</td></tr>`;
 
   const t = el("tr","tot");
-  t.innerHTML = `<td><b>ИТОГО</b></td><td class="num" data-l="⚡ за 1 шт.">—</td>
+  t.innerHTML = `<td><b>ИТОГО</b>${A.T.plainNeed?`<br><span class="muted">включая одиночные: ${fmt(A.T.plainNeed)}</span>`:""}</td><td class="num" data-l="⚡ за 1 шт.">—</td>
     <td class="num" data-l="Нужно">${fmt(A.T.need)}</td>
     <td></td>`;
   tf.appendChild(t);
@@ -1329,6 +1360,7 @@ function update(){
       if(Array.isArray(st.plain)) st.plain = st.plain.filter(p=>keyOf(p.name) !== k);
       delete st.ov[k]; delete st.done[k]; delete st.en[k]; delete st.col[k];
       if(st.hidden) delete st.hidden[k];
+      if(Array.isArray(st.resOrder)) st.resOrder = st.resOrder.filter(x=>x !== k);
       save("«" + name + "» удалён насовсем");
       renderItems(); renderPlain(); update();
     };
@@ -1390,6 +1422,8 @@ document.addEventListener("click", e=>{
   if(mc){ moveBoxCol(mc.dataset.mcol); return; }
   const ib = t.closest("[data-imove]");
   if(ib){ const [i,d] = ib.dataset.imove.split(":"); moveItem(+i, +d); return; }
+  const rb = t.closest("[data-mres]");
+  if(rb){ const s = rb.dataset.mres, p = s.lastIndexOf(":"); moveRes(s.slice(0, p), +s.slice(p + 1)); return; }
   const fb = t.closest("[data-fold]");
   if(fb){ const it = st.items[+fb.dataset.fold]; if(it){ it.fold = true; update(); save("строка «Топор без мастерской» свёрнута"); } return; }
   const ub = t.closest("[data-unfold]");
@@ -1538,11 +1572,47 @@ function syncUI(){
   document.getElementById("syncDis").style.display = on ? "" : "none";
 }
 
-/* сохранить в облако */
-async function syncPush(){
+/* данные похожи на встроенный пустой пример? — такое не должно затирать настоящие данные в облаке */
+function stIsExample(s){
+  try{
+    if(!s || !Array.isArray(s.items) || s.items.length !== DEFAULT.items.length) return false;
+    for(let i = 0; i < s.items.length; i++){
+      if(String(s.items[i].name) !== String(DEFAULT.items[i].name)) return false;
+      if(String(s.items[i].qty) !== String(DEFAULT.items[i].qty)) return false;
+    }
+    if((s.manual || []).length !== (DEFAULT.manual || []).length) return false;
+    if((s.plain || []).length) return false;
+    return true;
+  }catch(e){ return false; }
+}
+
+/* сохранить в облако (force=true — минуя проверки, только когда облако явно надо починить) */
+async function syncPush(force){
   if(!syncCfg || syncBusy) return;
   syncBusy = true;
   try{
+    if(!force){
+      /* перед отправкой сверяемся с облаком: старое устройство не должно затирать новые облачные данные */
+      let cloudSt = null, cloudAt = syncCfg.at || 0;
+      try{
+        const rg = await fetch("https://api.github.com/gists/" + syncCfg.gid, {headers: syncHdrs()});
+        if(rg.ok){
+          const gg = await rg.json();
+          const ff = gg.files && gg.files[SYNCFILE];
+          if(ff && ff.content){ const cc = JSON.parse(ff.content); if(cc && cc.st){ cloudSt = cc.st; cloudAt = cc.at || 0; } }
+        }
+      }catch(e){}
+      if(cloudSt && Array.isArray(cloudSt.items)){
+        /* в облаке правки новее, а своих свежих нет — пусть облако победит */
+        if(cloudAt > (syncCfg.at || 0) && !((syncCfg.led || 0) > cloudAt)){
+          syncBusy = false; syncStatus("в облаке данные новее — забираю их", ""); syncPull(); return;
+        }
+        /* локально пустой пример, а в облаке настоящие данные — пример не должен затирать настоящие */
+        if(stIsExample(st) && !stIsExample(cloudSt)){
+          syncBusy = false; syncStatus("здесь пустой пример — беру данные из облака", ""); syncPull(); return;
+        }
+      }
+    }
     if(st && st.fests && st.cur && st.fests[st.cur]) st.fests[st.cur] = festSnap();
     const at = Date.now();
     const r = await fetch("https://api.github.com/gists/" + syncCfg.gid, {
@@ -1576,6 +1646,12 @@ async function syncPull(){
         syncBusy = false;
         syncStatus("правки на этом устройстве новее — отправляю в облако", "");
         syncPush(); return;
+      }
+      /* в облаке оказался пустой пример, а здесь настоящие данные — не затираем, отправим свои */
+      if(stIsExample(cloud.st) && !stIsExample(st)){
+        syncBusy = false;
+        syncStatus("в облаке пустой пример — отправляю отсюда настоящие данные", "");
+        syncPush(true); return;
       }
       applyingCloud = true;
       st = Object.assign({}, DEFAULT, cloud.st);
@@ -1642,6 +1718,13 @@ async function syncConnect(){
     syncCfg = {tok: tok, gid: g.id, at: 0, led: 0};
     syncSaveCfg(); syncUI();
     if(cloud && cloud.st && Array.isArray(cloud.st.items)){
+      /* в облаке пустой пример, а здесь настоящие данные — не затираем, отправим свои */
+      if(stIsExample(cloud.st) && !stIsExample(st)){
+        syncCfg.at = cloud.at || 0; syncSaveCfg();
+        syncStatus("в облаке пустой пример — отправляю отсюда настоящие данные", "");
+        syncPush(true);
+        return;
+      }
       syncCfg.at = cloud.at || 0; syncSaveCfg();
       applyingCloud = true;
       st = Object.assign({}, DEFAULT, cloud.st);
