@@ -267,6 +267,16 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
   .ing-row input[type=number]{width:78px}
   .ing-row .del{justify-self:end;align-self:center;padding:4px 8px}
 
+  /* одиночные ресурсы — как в карточках таблицы: название на своей строчке,
+     «Нужно всего» крупно, поля в столбик, стрелки ▲▼ широкие до края строки */
+  .prow{padding:6px 7px}
+  .prow .rwrap{flex:1 1 100%}
+  .prow .fld{flex:1 0 100%;min-width:0;gap:6px}
+  .prow .fld::before{font-size:13px;width:90px;white-space:nowrap}
+  .prow .fld input{flex:none}
+  .prow .fld .stp{flex:1;margin-left:0;gap:5px}
+  .prow .fld .stp b{flex:1}
+
   /* стрелки вверх/вниз для чисел и кнопка списка ресурсов */
   .stp{display:inline-flex;flex-direction:row;gap:3px;flex:none;margin-left:4px}
   .stp b{display:block;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:6px;min-width:40px;min-height:25px;font-size:13px;line-height:1;padding:4px 6px;text-align:center;cursor:pointer;user-select:none;-webkit-user-select:none}
@@ -1011,7 +1021,7 @@ function renderPlain(){
   box.innerHTML = rows.length ? rows.map((p,i)=>`
     <div class="prow" data-p="${i}">
       <span class="rwrap"><button class="chip" data-pcol="${i}" style="background:${colorOf(keyOf(p.name))}" title="Цвет ресурса — нажмите, чтобы поменять"></button><input type="text" class="pname" data-pn="${i}" value="${escapeAttr(p.name)}" placeholder="Название ресурса" autocomplete="off" spellcheck="false"><button class="ddbtn" type="button" tabindex="-1" title="Показать список ресурсов">▼</button></span>
-      <span class="fld" data-l="нужно"><input type="text" inputmode="numeric" class="ov" data-pq="${i}" value="${p.qty?ci(p.qty):""}" placeholder="0"></span>
+      <span class="fld" data-l="Нужно всего"><input type="text" inputmode="numeric" class="ov" data-pq="${i}" value="${p.qty?ci(p.qty):""}" placeholder="0"></span>
       <span class="muted">шт.</span>
       <span class="pcell" data-pcalc="${i}"></span>
       <button class="del" data-pdel="${i}" title="убрать">🗑</button>
