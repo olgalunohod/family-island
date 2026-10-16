@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
-<!-- версия: 2026-10-16 — мобильная версия: ↑↓🗑 на строчке названия, широкие ▲▼, крупные подписи, подпись «Нужно всего» -->
+<!-- версия: 2026-10-16 — мобильная версия + нижнее меню; long-press ▲▼, светлая тема, «скопировать план», установка как приложение -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -12,12 +12,20 @@
 <meta name="apple-mobile-web-app-title" content="Калькулятор FI">
 <meta name="format-detection" content="telephone=no">
 <title>Family Island — рецепты: ресурсы, энергия, рубины</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2316264a'/%3E%3Crect x='29' y='14' width='7' height='38' rx='3' fill='%23a4703a' transform='rotate(12 32 33)'/%3E%3Cpath d='M34 16 L54 22 L50 36 L36 31 Z' fill='%23ffc93c'/%3E%3Cpath d='M34 16 L54 22 L52 27 L35 22 Z' fill='%23ffe9a3'/%3E%3C/svg%3E">
 <style>
 :root{
   --panel:#1b2c4d;--panel2:#22365e;--line:#2f4a7a;--txt:#e8f0ff;--dim:#9db2d6;
   --acc:#ffc93c;--acc2:#4cd97b;--craft:#c79bff;--bad:#ff8f8f;
 }
+/* светлая тема — переключатель в настройках, выбор запоминается на устройстве */
+body.lt{--panel:#ffffff;--panel2:#eef3fa;--line:#b9c7dd;--txt:#16264a;--dim:#5a6b87;--acc:#c08a08;--acc2:#1f9d55;--craft:#7b3fc4;--bad:#c73c3c}
+body.lt{background:linear-gradient(160deg,#e7edf7,#f5f8fc 60%,#e9eff8)}
+body.lt header{background:radial-gradient(circle at 50% 0,#d9e6f8,#eff4fb 70%)}
+body.lt input,body.lt select,body.lt textarea{background:#ffffff;border-color:var(--line);color:var(--txt)}
+body.lt #botnav{background:rgba(244,247,252,.97)}
 *{box-sizing:border-box}
 body{margin:0;font-family:"Segoe UI",Roboto,Arial,sans-serif;background:linear-gradient(160deg,#0e1a30,#16264a 60%,#101d38);color:var(--txt);min-height:100vh}
 header{padding:12px 16px 8px;text-align:center;background:radial-gradient(circle at 50% 0,#2a4a86,#12203a 70%);border-bottom:2px solid var(--line)}
@@ -325,6 +333,7 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
   #botnav button i{font-style:normal;font-size:17px;line-height:1}
   #botnav button.act{background:var(--acc);border-color:var(--acc);color:#101a30;font-weight:700}
   body{padding-bottom:calc(68px + env(safe-area-inset-bottom))}
+  #planCopy{width:100%;padding:8px;font-size:13px}
 }
 
 @media(max-width:400px){
@@ -362,6 +371,7 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
 </style>
 </head>
 <body>
+<script>try{if(localStorage.getItem("fi_light")==="1")document.body.className+=" lt";}catch(e){}</script>
 
 <header>
   <h1><span>🏝️</span> Family Island — рецепты и стоимость</h1>
@@ -388,6 +398,7 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
       </select></label>
       <label>Курс <input type="number" id="setCr" min="1" value="100">💎 = <input type="number" id="setCe" min="1" value="1200">⚡</label>
       <span class="muted" id="epcTxt"></span>
+      <label><input type="checkbox" id="setLight"> ☀️ светлая тема</label>
     </div>
   </div>
 
@@ -410,6 +421,7 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
   </div>
 
   <div class="vbar" id="vbar"></div>
+  <div style="margin-bottom:12px"><button class="mini" id="planCopy" title="Скопировать список: что и сколько осталось сделать — можно отправить себе или другу">📋 скопировать план</button></div>
 
   <div class="cols">
 
@@ -1106,6 +1118,40 @@ function stepBy(inp, d){
   inp.dispatchEvent(new Event("input",{bubbles:true}));
   inp.dispatchEvent(new Event("change",{bubbles:true}));
 }
+
+/* зажал ▲▼ — число идёт само: сначала по 1, потом по 5, потом по 25 (быстро) */
+(function(){
+  let t1 = null, t2 = null, downBtn = null;
+  const stop = ()=>{
+    if(t1){ clearTimeout(t1); t1 = null; }
+    if(t2){ clearTimeout(t2); t2 = null; }
+  };
+  document.addEventListener("pointerdown", e=>{
+    const b = e.target && e.target.closest && e.target.closest(".stp b");
+    if(!b) return;
+    e.preventDefault();                       /* клавиатура не вылезет, лишнего клика не будет */
+    const stp = b.parentNode;
+    const inp = stp && stp.previousElementSibling;
+    if(!inp || inp.tagName !== "INPUT") return;
+    downBtn = b;
+    const d = +b.dataset.step;
+    stepBy(inp, d);                           /* первый шаг сразу — тап отзывчивый */
+    let n = 0;
+    t1 = setTimeout(function run(){
+      n++;
+      stepBy(inp, (n > 26 ? 25 : (n > 12 ? 5 : 1)) * d);
+      t2 = setTimeout(run, n > 12 ? 60 : 90);
+    }, 420);
+  });
+  ["pointerup","pointercancel","pointerleave"].forEach(ev=>document.addEventListener(ev, stop));
+  /* клик, начатый нажатием на стрелку, уже учтён — гасим */
+  document.addEventListener("click", e=>{
+    const b = e.target && e.target.closest && e.target.closest(".stp b");
+    const wasDown = b && b === downBtn;
+    downBtn = null;
+    if(wasDown){ e.stopPropagation(); e.preventDefault(); }
+  }, true);
+})();
 
 /* ============ карточки изделий ============ */
 function renderItems(){
@@ -1909,6 +1955,56 @@ window.addEventListener("focus", ()=>syncPull());
   };
   window.addEventListener("scroll", sync, {passive:true});
   sync();
+})();
+
+/* ============ светлая тема (переключатель в настройках) ============ */
+(function(){
+  const cb = document.getElementById("setLight");
+  if(!cb) return;
+  cb.checked = document.body.classList.contains("lt");
+  cb.addEventListener("change", ()=>{
+    document.body.classList.toggle("lt", cb.checked);
+    try{ localStorage.setItem("fi_light", cb.checked ? "1" : "0"); }catch(e){}
+  });
+})();
+
+/* ============ кнопка «скопировать план» ============ */
+(function(){
+  const btn = document.getElementById("planCopy");
+  if(!btn) return;
+  const old = btn.textContent;
+  const back = ()=>{ setTimeout(()=>{ btn.textContent = old; }, 2000); };
+  btn.addEventListener("click", ()=>{
+    const A = aggregate();
+    const L = ["🧾 План — " + (st.cur || "")];
+    A.rows.filter(r=>r.need > 0).forEach(r=>{
+      const cnt = r.left > 0 ? r.left : r.need;
+      let s = "• " + r.name + " — " + fmt(cnt) + " шт";
+      if(r.en) s += " · ⚡ " + fmt(r.left > 0 ? r.energy : r.need * r.en);
+      if(r.done > 0) s += " (сделано " + fmt(r.done) + " шт)";
+      L.push(s);
+    });
+    if(!L.length) L.push("пока пусто");
+    L.push("");
+    L.push("ИТОГО: ⚡ " + fmt(A.T.energy) + " = 💎 " + fmt(A.T.ruby) + "  (1 💎 = " + (Math.round(epc()*100)/100) + " ⚡)");
+    if(A.T.plainNeed) L.push("из них одиночных (топор): " + fmt(A.T.plainNeed) + " шт");
+    const txt = L.join("\n");
+    const ok = ()=>{ btn.textContent = "✓ скопировано"; back(); };
+    const fail = ()=>{ btn.textContent = "✗ не вышло"; back(); };
+    const fallback = ()=>{
+      const ta = document.createElement("textarea");
+      ta.value = txt;
+      ta.style.cssText = "position:fixed;opacity:0";
+      document.body.appendChild(ta);
+      ta.select();
+      let good = false;
+      try{ good = document.execCommand("copy"); }catch(e){}
+      document.body.removeChild(ta);
+      good ? ok() : fail();
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, fallback);
+    else fallback();
+  });
 })();
 </script>
 </body>
