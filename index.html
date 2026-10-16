@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
-<!-- версия: 2026-10-14 — мобильная версия: свёрнутые блоки, синхронизация внизу, выровненные столбики -->
+<!-- версия: 2026-10-16 — мобильная версия: ↑↓🗑 на строчке названия, широкие ▲▼, крупные подписи, подпись «Нужно всего» -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -228,24 +228,28 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
   .item-head .sp{display:none}
   .item{padding:9px 8px}
 
-  /* таблица ресурсов — карточками: имя строкой, «⚡ за 1 шт.» строкой,
-     а «Нужно» + ▲▼ + ↑↓🗑 одной строкой. Внутри карточки две колонки —
-     из-за этого значения и стрелки у всех карточек ровно по одной линии */
+  /* таблица ресурсов — карточками: имя и ↑↓🗑 одной строкой (имяное поле
+     короче — под кнопки), а «⚡ за 1 шт.» и «Нужно всего» — во всю ширину карточки,
+     стрелки ▲▼ растягиваются до правого края. У всех карточек числа и стрелки
+     по одной линии */
   #tSum thead{display:none}
   #tSum,#tSum tbody,#tSum tfoot{display:block;width:100%}
   #tSum tr{display:grid;grid-template-columns:1fr auto;column-gap:6px;align-items:center;border:1px solid var(--line);border-radius:9px;background:var(--panel2);padding:4px 7px;margin-bottom:5px}
   #tSum tr.tot{background:rgba(255,201,60,.09);border-color:var(--acc)}
   #tSum td{display:flex;align-items:center;justify-content:space-between;gap:6px;border:none;padding:2px 0;text-align:left}
-  #tSum td::before{content:attr(data-l);color:var(--dim);font-size:11px;text-transform:none;letter-spacing:0;flex:none}
+  #tSum td::before{content:attr(data-l);color:var(--dim);font-size:13px;text-transform:none;letter-spacing:0;flex:none}
+  /* подпись одной ширины — чтобы числа обеих строк стояли в один столбик */
+  #tSum td.num::before{width:90px;white-space:nowrap}
   #tSum td:first-child::before{content:""}
-  #tSum td:nth-child(1){grid-column:1/-1;padding-bottom:5px;border-bottom:1px solid var(--line);margin-bottom:2px}
-  #tSum td:nth-child(2),#tSum td:nth-child(3){grid-column:1}
-  #tSum td:last-child{grid-column:2;justify-content:flex-end;gap:5px;padding-top:1px}
+  #tSum td:nth-child(1){grid-column:1;padding-bottom:5px;border-bottom:1px solid var(--line);margin-bottom:2px}
+  #tSum td:nth-child(2),#tSum td:nth-child(3){grid-column:1/-1}
+  #tSum td:last-child{grid-column:2;grid-row:1;justify-content:flex-end;gap:5px;padding-top:1px}
   #tSum td:last-child::before{content:none}
   #tSum td:only-child{grid-column:1/-1;justify-content:flex-start;padding-top:2px;padding-bottom:2px;border-bottom:none;margin-bottom:0}
-  /* ✕ (сброс «Нужно») висит в пустом промежутке — на место числа и стрелок не влияет */
-  #tSum .ovwrap{position:relative;gap:6px}
-  #tSum .stp{margin-left:0}
+  /* ✕ (сброс «Нужно всего») висит в пустом промежутке — на место числа и стрелок не влияет */
+  #tSum .ovwrap{position:relative;gap:6px;flex:1;min-width:0}
+  #tSum .stp{margin-left:0;flex:1;gap:5px}
+  #tSum .stp b{flex:1}
   #tSum .ovclr{position:absolute;right:100%;top:50%;transform:translateY(-50%);margin:0 5px 0 0}
   #tSum .rwrap{width:100%;min-width:0}
   #tSum .rname{width:100%;min-width:0}
@@ -265,7 +269,7 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
 
   /* стрелки вверх/вниз для чисел и кнопка списка ресурсов */
   .stp{display:inline-flex;flex-direction:row;gap:3px;flex:none;margin-left:4px}
-  .stp b{display:block;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:6px;min-width:31px;min-height:25px;font-size:11px;line-height:1;padding:4px 6px;text-align:center;cursor:pointer;user-select:none;-webkit-user-select:none}
+  .stp b{display:block;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:6px;min-width:40px;min-height:25px;font-size:13px;line-height:1;padding:4px 6px;text-align:center;cursor:pointer;user-select:none;-webkit-user-select:none}
   .stp b:active{background:var(--acc);color:#101a30}
   .ing-row .fld input{margin-left:auto}
   #tSum td .ov{margin-left:auto}
@@ -290,11 +294,21 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
   .setbar{flex-direction:column;align-items:stretch;gap:5px}
   .setbar label{justify-content:flex-start}
   .toolbar button{flex:1 1 70px;font-size:11.5px}
-  /* самые узкие телефоны: ↑↓🗑 обязаны уместиться в той же строке, что и ▲▼ (в т.ч. при ✕) */
-  .stp b{min-width:28px;padding:4px 5px}
+  /* самые узкие телефоны: строки «за 1 шт.» и «Нужно всего» обязаны уместиться
+     в левую колонку — поля и стрелки чуть уже; ↑↓🗑 теперь живут вверху,
+     на строчке с названием ресурса */
+  .stp b{min-width:36px;padding:4px 6px}
+  #tSum .ov{width:68px}
   #tSum td:last-child{padding-left:5px}
   #tSum td:last-child .nv{padding:1px 6px}
   #tSum .del{padding:1px 5px}
+}
+
+@media(max-width:372px){
+  /* совсем узкие (например, 360 px): ещё чуть уже поля и стрелки ▲▼,
+     чтобы строка «⚡ за 1 шт.» не переполнялась */
+  .stp b{min-width:32px;padding:4px 5px}
+  #tSum .ov{width:64px}
 }
 
 @media print{
@@ -384,13 +398,13 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
       <button class="nv" id="festDel" title="Удалить этот фестиваль">🗑</button>
     </div>
     <p class="note">Вбейте <b>все ресурсы</b> и укажите <b>⚡ сколько стоит 1 шт.</b> Квадратик слева — <b>цвет ресурса</b> (нажмите, чтобы поменять), он же будет в рецептах. Название правится прямо в таблице — оно поменяется и в рецептах.
-      Столбец «Нужно» показывает количество <b>с учётом мастерской 3×4 и одиночных ресурсов</b> — ИТОГО внизу считает всё вместе. Если впишете своё число, рядом появится ✕ — он возвращает расчёт по рецепту. Стрелки <b>↑↓</b> меняют порядок строк, 🗑 — удалить ресурс насовсем, вместе с рецептами, где он используется.</p>
+      Столбец «Нужно всего» показывает количество <b>с учётом мастерской 3×4 и одиночных ресурсов</b> — ИТОГО внизу считает всё вместе. Если впишете своё число, рядом появится ✕ — он возвращает расчёт по рецепту. Стрелки <b>↑↓</b> меняют порядок строк, 🗑 — удалить ресурс насовсем, вместе с рецептами, где он используется.</p>
     <div class="scroll">
       <table id="tSum">
         <thead><tr>
           <th>Ресурс</th>
           <th class="num">⚡ за 1 шт.</th>
-          <th class="num">Нужно ✏️</th>
+          <th class="num">Нужно всего ✏️</th>
           <th class="num"></th>
         </tr></thead>
         <tbody></tbody>
@@ -782,7 +796,7 @@ function aggregate(){
       if(!per || !k) return;
       if(!map.has(k)) map.set(k, {key:k, name:(g.name||"").trim(), perMin:per, need:0, src:"recipe"});
       const a = map.get(k);
-      /* «Нужно» — сколько придётся самой собрать при работе в мастерской 3×4 */
+      /* «Нужно всего» — сколько придётся самой собрать при работе в мастерской 3×4 */
       a.need += c.madeYes * per;
       a.perMin = Math.min(a.perMin, per);
       const nm = (g.name||"").trim();
@@ -1230,7 +1244,7 @@ function update(){
     tr.innerHTML = `
       <td><span class="rwrap"><button class="chip" data-colkey="${r.key}" style="background:${colorOf(r.key)}" title="Цвет ресурса — нажмите, чтобы поменять"></button><input type="text" class="rname" data-rn="${r.key}" data-src="${r.src||"recipe"}" value="${escapeAttr(r.name)}" title="${r.src==="manual"?"Название отдельного ресурса":"Изменить название — применится во всех рецептах"}"></span></td>
       <td class="num" data-l="⚡ за 1 шт."><input type="text" inputmode="numeric" class="ov ${r.en?"on":""}" data-en="${r.key}" value="${r.en?r.en:""}" placeholder="0" title="Сколько энергии тратится на 1 единицу ресурса"></td>
-      <td class="num" data-l="Нужно">
+      <td class="num" data-l="Нужно всего">
         <span class="ovwrap"><input type="text" inputmode="numeric" class="ov" data-ov="${r.key}" value="${r.need?fmt(r.need):""}" placeholder="${fmt(r.need)}" title="${r.hasOv?"Вписано вручную — нажмите ✕, чтобы вернуть расчёт по рецепту":"Впишите своё значение — расчёт пойдёт от него"}">${r.hasOv?`<button class="ovclr" data-clr="${r.key}" title="Убрать вписанное вручную — вернуть расчёт по рецепту">✕</button>`:""}</span>
       </td>
       <td class="num" data-l="">
@@ -1243,7 +1257,7 @@ function update(){
 
   const t = el("tr","tot");
   t.innerHTML = `<td><b>ИТОГО</b>${A.T.plainNeed?`<br><span class="muted">включая одиночные: ${fmt(A.T.plainNeed)}</span>`:""}</td><td class="num" data-l="⚡ за 1 шт.">—</td>
-    <td class="num" data-l="Нужно">${fmt(A.T.need)}</td>
+    <td class="num" data-l="Нужно всего">${fmt(A.T.need)}</td>
     <td></td>`;
   tf.appendChild(t);
 
