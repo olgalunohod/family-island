@@ -88,6 +88,9 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .item-head .qt{width:74px;color:var(--acc);font-weight:700}
 .item-head .rb{width:74px;color:#ff9bb8}
 .item-head .sp{flex:1}
+.item-head .ifld{display:inline-flex;align-items:center;gap:5px}
+.item-head .ifld::before{content:attr(data-l);color:var(--dim)}
+.item-head .del-m{display:none}
 .ing-head,.ing-row{display:grid;grid-template-columns:1fr 74px 78px 62px 24px;gap:6px;align-items:center}
 .ing-head{font-size:10px;text-transform:uppercase;color:var(--dim);padding-bottom:3px}
 .ing-row{margin-bottom:5px}
@@ -224,8 +227,17 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
   .toolbar .sp{display:none}
   .toolbar button{flex:1 1 84px;text-align:center;padding:8px 6px}
   .item-head{gap:6px}
-  .item-head .nm{min-width:0;flex:1 1 100%;font-size:16px}
+  .item-head .nm{min-width:0;flex:1 1 0;font-size:16px}
   .item-head .sp{display:none}
+  /* шапка рецептов — как в карточках: «Нужно всего» крупно, поля в столбик,
+     ▲▼ широкие до края строки; 🗑 переехал на строчку с названием */
+  .item-head .ifld{flex:1 0 100%;min-width:0;gap:6px}
+  .item-head .ifld::before{font-size:13px;width:100px;white-space:nowrap}
+  .item-head .ifld input{flex:none}
+  .item-head .ifld .stp{flex:1;margin-left:0;gap:5px}
+  .item-head .ifld .stp b{flex:1}
+  .item-head .del-d{display:none}
+  .item-head .del-m{display:inline-flex;padding:4px 8px}
   .item{padding:9px 8px}
 
   /* таблица ресурсов — карточками: имя и ↑↓🗑 одной строкой (имяное поле
@@ -262,10 +274,16 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
   .ing-row{grid-template-columns:1fr auto;gap:5px 8px;padding:6px;border:1px solid var(--line);border-radius:9px;background:rgba(0,0,0,.15);margin-bottom:6px}
   .ing-row .rwrap{grid-column:1/-1;min-width:0}
   .ing-row .fld,.ing-row .cell{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0}
-  .ing-row .fld::before,.ing-row .cell::before{content:attr(data-l);color:var(--dim);font-size:11px}
-  .ing-row .cell{text-align:right}
+  /* строки ингредиентов как в карточках: подписи 13 px, поля в столбик,
+     ▲▼ широкие до края; «на всё» и 🗑 — последней строкой */
+  .ing-row .fld::before,.ing-row .cell::before{content:attr(data-l);color:var(--dim);font-size:13px}
+  .ing-row .fld{grid-column:1/-1}
+  .ing-row .fld::before{width:70px;white-space:nowrap;flex:none}
+  .ing-row .fld .stp{flex:1;margin-left:0;gap:5px}
+  .ing-row .fld .stp b{flex:1}
+  .ing-row .cell{grid-column:1;order:1;text-align:right}
   .ing-row input[type=number]{width:78px}
-  .ing-row .del{justify-self:end;align-self:center;padding:4px 8px}
+  .ing-row .del{grid-column:2;order:2;justify-self:end;align-self:center;padding:4px 8px}
 
   /* одиночные ресурсы — как в карточках таблицы: название на своей строчке,
      «Нужно всего» крупно, поля в столбик, стрелки ▲▼ широкие до края строки */
@@ -1087,14 +1105,11 @@ function renderItems(){
         <button class="nv" data-imove="${i}:-1" title="Переместить рецепт вверх">↑</button>
         <button class="nv" data-imove="${i}:1" title="Переместить рецепт вниз">↓</button>
         <input type="text" class="nm" data-f="name" data-i="${i}" value="${escapeAttr(it.name)}" placeholder="Название изделия">
-        <span class="muted">нужно</span>
-        <input type="number" class="qt" data-f="qty" data-i="${i}" min="0" value="${ci(it.qty)}">
-        <span class="muted">шт.</span>
-        <span class="muted">💎 игра просит</span>
-        <input type="number" class="rb" data-f="rub" data-i="${i}" min="0" value="${ci(it.rub)}">
-        <span class="muted">руб.</span>
+        <button class="del del-m" data-del-item="${i}" title="удалить изделие">🗑</button>
+        <span class="ifld" data-l="Нужно всего"><input type="number" class="qt" data-f="qty" data-i="${i}" min="0" value="${ci(it.qty)}"><span class="muted">шт.</span></span>
+        <span class="ifld" data-l="💎 игра просит"><input type="number" class="rb" data-f="rub" data-i="${i}" min="0" value="${ci(it.rub)}"><span class="muted">руб.</span></span>
         <span class="sp"></span>
-        <button class="del" data-del-item="${i}" title="удалить изделие">🗑</button>
+        <button class="del del-d" data-del-item="${i}" title="удалить изделие">🗑</button>
       </div>
       <div class="ing-head">
         <span>Ресурс</span>
