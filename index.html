@@ -136,6 +136,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .foldh{cursor:pointer;user-select:none;-webkit-user-select:none}
 .foldh .foldic{display:none;margin-left:auto;padding-left:8px;color:var(--dim);font-size:11px;font-style:normal;transition:transform .15s}
 .box.open .foldh .foldic{transform:rotate(180deg)}
+#botnav{display:none}
 #setFold{display:none}
 #setFold b{font-size:13.5px;white-space:nowrap}
 #setFold .muted{min-width:0}
@@ -316,6 +317,14 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
   .vt .vname{font-size:13px;color:var(--acc)}
   .vt .rescell{margin:2px 0 4px}
   .vt .rn{white-space:normal}
+
+  /* нижнее меню — мгновенный прыжок к блокам; панель с золотой каймой и тенью,
+     чтобы не сливаться со страницей; текущий блок подсвечен */
+  #botnav{position:fixed;left:0;right:0;bottom:0;z-index:80;display:flex;gap:6px;padding:7px 8px calc(6px + env(safe-area-inset-bottom));background:rgba(14,24,45,.97);border-top:2px solid var(--acc);box-shadow:0 -6px 20px rgba(0,0,0,.5)}
+  #botnav button{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 2px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--txt);font-size:12px;line-height:1.15;cursor:pointer}
+  #botnav button i{font-style:normal;font-size:17px;line-height:1}
+  #botnav button.act{background:var(--acc);border-color:var(--acc);color:#101a30;font-weight:700}
+  body{padding-bottom:calc(68px + env(safe-area-inset-bottom))}
 }
 
 @media(max-width:400px){
@@ -348,7 +357,7 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
   .ov,.rname,input{border:1px solid #999;background:#fff;color:#000}
   .muted,.card .hint,.card .lbl,.note{color:#444}
   .foldc{display:block!important}
-  #setFold,.foldic{display:none!important}
+  #setFold,.foldic,#botnav{display:none!important}
 }
 </style>
 </head>
@@ -495,6 +504,12 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
 
   <footer>Все данные хранятся в вашем браузере — и в вашем личном облаке, если включена синхронизация.</footer>
 </div>
+
+<nav id="botnav" aria-label="Быстрый переход к блокам">
+  <button type="button" data-go="boxRes"><i>🧾</i>Ресурсы</button>
+  <button type="button" data-go="boxPlain"><i>🪓</i>Одиночные</button>
+  <button type="button" data-go="boxItems"><i>🏭</i>Рецепты</button>
+</nav>
 
 <datalist id="dlRes"></datalist>
 
@@ -1858,6 +1873,43 @@ let syncFromLink = false;
 if(!syncFromLink && syncCfg){ syncStatus("проверяю облако…", ""); syncPull(); }
 document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) syncPull(); });
 window.addEventListener("focus", ()=>syncPull());
+
+/* ============ нижнее меню (телефон): прыжок к блоку + подсветка текущего ============ */
+(function(){
+  const btns = [...document.querySelectorAll("#botnav button")];
+  /* прыжок со своей анимацией — плавная прокрутка scrollIntoView работает не везде */
+  const jumpTo = (el)=>{
+    const sc = document.scrollingElement || document.documentElement;
+    const to = Math.max(0, el.getBoundingClientRect().top + sc.scrollTop - 6);
+    const from = sc.scrollTop, dist = to - from, dur = 450;
+    if(!dist) return;
+    const t0 = Date.now();
+    const tick = ()=>{
+      const k = Math.min(1, (Date.now() - t0) / dur);
+      sc.scrollTop = from + dist * (1 - Math.cos(k * Math.PI)) / 2;
+      sync();
+      if(k < 1) setTimeout(tick, 16);
+    };
+    setTimeout(tick, 16);
+  };
+  btns.forEach(b=>{
+    b.onclick = ()=>{
+      const t = document.getElementById(b.dataset.go);
+      if(t) jumpTo(t);
+    };
+  });
+  /* какой блок сейчас наверху — тот и подсвечен */
+  const sync = ()=>{
+    let cur = null;
+    btns.forEach(b=>{
+      const t = document.getElementById(b.dataset.go);
+      if(t && t.getBoundingClientRect().top <= 100) cur = b;
+    });
+    btns.forEach(b=>b.classList.toggle("act", b === cur));
+  };
+  window.addEventListener("scroll", sync, {passive:true});
+  sync();
+})();
 </script>
 </body>
 </html>
