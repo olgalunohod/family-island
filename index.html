@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
-<!-- версия: 2026-10-20 — убран крестик ✕ у «Нужно всего» (очистка поля возвращает расчёт по рецепту); палитра цветов (20 цветов + свой); порядок ресурсов — как добавлены; тап по ▲▼ = один шаг; добавление одиночного без клавиатуры; нижнее меню; светлая тема; «скопировать план»; установка как приложение -->
+<!-- версия: 2026-10-20 — клавиатура не поднимается ни при одном добавлении (ресурс в рецепт, изделие, ресурс в таблицу, одиночный); убран крестик ✕ у «Нужно всего»; палитра цветов (20 цветов + свой); порядок ресурсов — как добавлены; тап по ▲▼ = один шаг; нижнее меню; светлая тема; «скопировать план»; установка как приложение -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -1247,8 +1247,9 @@ function renderItems(){
   box.querySelectorAll("[data-add-ing]").forEach(b=>{
     b.onclick = ()=>{ const i = +b.dataset.addIng;
       st.items[i].ing.push({name:"", per:1}); renderItems(); update(); save("ресурс добавлен");
+      /* клавиатуру не поднимаем — новая строка просто прокручивается к виду */
       const rows = document.querySelectorAll(`.ings[data-i="${i}"] .ing-row input[type=text]`);
-      if(rows.length) rows[rows.length-1].focus(); };
+      if(rows.length) rows[rows.length-1].scrollIntoView({block:"center"}); };
   });
   box.querySelectorAll("[data-del-item]").forEach(b=>{
     b.onclick = ()=>{ st.items.splice(+b.dataset.delItem,1); renderItems(); update(); save("изделие удалено"); };
@@ -1538,14 +1539,16 @@ document.getElementById("btnAddRes").onclick = ()=>{
   st.manual.push(n);
   save("ресурс добавлен — впишите название, сколько нужно и ⚡ цену");
   update();
+  /* клавиатуру не поднимаем — строка просто прокручивается к виду */
   const inp = Array.prototype.find.call(document.querySelectorAll("#tSum .rname"), i=>i.dataset.rn === keyOf(n));
-  if(inp){ inp.focus(); inp.select(); }
+  if(inp) inp.scrollIntoView({block:"center"});
 };
 document.getElementById("btnAddItem").onclick = ()=>{
   st.items.push({name:"", qty:1, rub:0, ing:[{name:"", per:1}]});
   renderItems(); update(); save("изделие добавлено");
-  const rows = document.querySelectorAll("#items .item .nm");
-  if(rows.length) rows[rows.length-1].focus();
+  /* клавиатуру не поднимаем — карточка просто встаёт последней */
+  const cards = document.querySelectorAll("#items .item");
+  if(cards.length) cards[cards.length-1].scrollIntoView({block:"center"});
 };
 /* фестивали */
 document.getElementById("festSel").onchange = e=>festSwitch(e.target.value);
