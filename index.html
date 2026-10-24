@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
-<!-- версия: 2026-10-24 — новый ресурс в таблице: поле пустое с серой подсказкой, просто печатаете название (как у изделий); итог под таблицей считается с топором (1 удар = 2 шт.), как и подсчёты сбоку; клавиатура не поднимается ни при одном добавлении (ресурс в рецепт, изделие, ресурс в таблицу, одиночный); убран крестик ✕ у «Нужно всего»; палитра цветов (20 цветов + свой); порядок ресурсов — как добавлены; тап по ▲▼ = один шаг; нижнее меню; светлая тема; «скопировать план»; установка как приложение -->
+<!-- версия: 2026-10-24 — кнопка «🧹 очистить» стирает весь текущий фестиваль (с подтверждением, другие фестивали целы); кнопка «➕ добавить все» переносит в одиночные ресурсы разом всё из таблицы цен; жёлтая «➕ Ресурс» перенесена вниз, к самому списку; новый ресурс в таблице: поле пустое с серой подсказкой, просто печатаете название (как у изделий); итог под таблицей считается с топором (1 удар = 2 шт.), как и подсчёты сбоку; клавиатура не поднимается ни при одном добавлении (ресурс в рецепт, изделие, ресурс в таблицу, одиночный); убран крестик ✕ у «Нужно всего»; палитра цветов (20 цветов + свой); порядок ресурсов — как добавлены; тап по ▲▼ = один шаг; нижнее меню; светлая тема; «скопировать план»; установка как приложение -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -131,6 +131,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .nv{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:6px;padding:1px 7px;font-size:12px;cursor:pointer;flex:none}
 .nv:hover{color:var(--acc);border-color:var(--acc)}
 .festbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:rgba(0,0,0,.18)}
+#btnAddRes{display:block;width:100%;margin:0 0 8px;padding:9px;font-size:14px}
 .festbar label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--dim)}
 .festbar select{min-width:150px;flex:1 1 150px}
 .foldb{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:6px;padding:0 7px;font-size:11px;cursor:pointer}
@@ -439,7 +440,6 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
       <button class="nv" data-move="res:-1" title="Переместить блок вверх">↑</button>
       <button class="nv" data-move="res:1" title="Переместить блок вниз">↓</button>
       <button class="nv" data-mcol="res" title="Перенести блок в другую колонку">⇄</button>
-      <button class="primary" id="btnAddRes" title="Добавить отдельный ресурс, которого нет в рецептах">➕ Ресурс</button>
     </h2>
     <div class="festbar">
       <label>Фестиваль
@@ -448,9 +448,11 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
       <button class="nv" id="festAdd" title="Создать новый фестиваль с тем же набором, что сейчас">➕ новый</button>
       <button class="nv" id="festRen" title="Переименовать этот фестиваль">✏️ имя</button>
       <button class="nv" id="festDel" title="Удалить этот фестиваль">🗑</button>
+      <button class="nv" id="festClear" title="Очистить всё, что вписано в этом фестивале: ресурсы, цены, рецепты, одиночные. Другие фестивали не тронутся">🧹 очистить</button>
     </div>
     <p class="note">Вбейте <b>все ресурсы</b> и укажите <b>⚡ сколько стоит 1 шт.</b> Квадратик слева — <b>цвет ресурса</b> (нажмите, чтобы поменять), он же будет в рецептах. Название правится прямо в таблице — оно поменяется и в рецептах.
       Столбец «Нужно всего» показывает количество <b>с учётом мастерской 3×4 и одиночных ресурсов</b> — ИТОГО внизу считает всё вместе. Если впишете своё число — расчёт пойдёт от него, а очистите поле — снова будет счёт по рецепту. Стрелки <b>↑↓</b> меняют порядок строк, 🗑 — удалить ресурс насовсем, вместе с рецептами, где он используется.</p>
+    <button class="primary" id="btnAddRes" title="Добавить отдельный ресурс, которого нет в рецептах">➕ Ресурс</button>
     <div class="scroll">
       <table id="tSum">
         <thead><tr>
@@ -479,7 +481,10 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
     <p class="note">Ресурсы, которые <b>не входят в рецепты</b>: рубишь в топор (1 удар = 2 шт.), в мастерскую они не идут.
       Считаются <b>дополнительно</b> к рецептам — отдельной строкой в итогах. Сколько нужно — впишите сами.</p>
     <div id="plainList"></div>
-    <button class="mini" id="plainAdd">➕ добавить ресурс</button>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      <button class="mini" id="plainAdd">➕ добавить ресурс</button>
+      <button class="mini" id="plainAddAll" title="Перенести сюда разом все ресурсы из таблицы «Ресурсы и цены», которых ещё нет в списке">➕ добавить все</button>
+    </div>
     <div class="vbar" id="plainBar" style="margin-bottom:0"></div>
   </div>
 
@@ -669,6 +674,19 @@ function festDel(){
   festApply(st.fests[first]);
   st.cur = first;
   syncSettings(); renderFestBar(); renderItems(); renderPlain(); update(); save("фестиваль удалён");
+}
+/* очистка одного фестиваля: вписанное стирается, имя и настройки калькулятора остаются */
+function festClear(){
+  festsEnsure();
+  const CLEAR = ["en","ov","done","manual","hidden","col","items","plain","resOrder"];
+  if(!confirm("Очистить фестиваль «" + st.cur + "»?\n\n" +
+    "Уберётся всё вписанное: ресурсы и цены, рецепты, одиночные ресурсы, цвета.\n" +
+    "Имя фестиваля и настройки (пачка, буст, режим, курсы) останутся.\n\n" +
+    "Другие фестивали не тронутся.")) return;
+  CLEAR.forEach(k=>{ st[k] = (k === "manual" || k === "items" || k === "plain" || k === "resOrder") ? [] : {}; });
+  festsEnsure();          /* фестиваль остаётся — просто пустой */
+  syncSettings(); renderFestBar(); renderItems(); renderPlain(); update();
+  save("фестиваль «" + st.cur + "» очищен");
 }
 
 /* ============ порядок крупных блоков ============ */
@@ -1559,6 +1577,7 @@ document.getElementById("festSel").onchange = e=>festSwitch(e.target.value);
 document.getElementById("festAdd").onclick = ()=>festAdd();
 document.getElementById("festRen").onclick = ()=>festRen();
 document.getElementById("festDel").onclick = ()=>festDel();
+document.getElementById("festClear").onclick = ()=>festClear();
 /* перестановка блоков и рецептов кнопками ↑↓ */
 document.addEventListener("click", e=>{
   const t = e.target;
@@ -1742,6 +1761,23 @@ document.getElementById("plainAdd").onclick = ()=>{
   /* клавиатуру не поднимаем: строка просто встаёт последней и прокручивается к ней экран */
   const rows = document.querySelectorAll("#plainList .prow");
   if(rows.length) rows[rows.length-1].scrollIntoView({block:"nearest"});
+};
+/* --- одиночные ресурсы: разом добавить всё, что есть в таблице «Ресурсы и цены» --- */
+document.getElementById("plainAddAll").onclick = ()=>{
+  const A = aggregate();
+  const have = new Set(plainRows().map(p=>keyOf(p.name)));
+  let n = 0;
+  A.rows.forEach(r=>{
+    const nm = (r.name||"").trim(), k = keyOf(nm);
+    if(!k || r.fresh) return;               /* пустая строка без названия — не тащим */
+    if(have.has(k)) return;
+    have.add(k);
+    plainRows().push({name:nm, qty:0});
+    n++;
+  });
+  renderPlain(); update();
+  save(n ? ("добавлено разом: " + n + " — впишите, сколько нужно")
+         : "все ресурсы из таблицы уже есть в списке");
 };
 
 /* ============ синхронизация: облако на GitHub Gist ============
