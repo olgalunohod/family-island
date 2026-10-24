@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
-<!-- версия: 2026-10-22 — итог под таблицей ресурсов считается с топором (1 удар = 2 шт.), как и подсчёты сбоку; клавиатура не поднимается ни при одном добавлении (ресурс в рецепт, изделие, ресурс в таблицу, одиночный); убран крестик ✕ у «Нужно всего»; палитра цветов (20 цветов + свой); порядок ресурсов — как добавлены; тап по ▲▼ = один шаг; нижнее меню; светлая тема; «скопировать план»; установка как приложение -->
+<!-- версия: 2026-10-24 — новый ресурс в таблице: поле пустое с серой подсказкой, просто печатаете название (как у изделий); итог под таблицей считается с топором (1 удар = 2 шт.), как и подсчёты сбоку; клавиатура не поднимается ни при одном добавлении (ресурс в рецепт, изделие, ресурс в таблицу, одиночный); убран крестик ✕ у «Нужно всего»; палитра цветов (20 цветов + свой); порядок ресурсов — как добавлены; тап по ▲▼ = один шаг; нижнее меню; светлая тема; «скопировать план»; установка как приложение -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -869,7 +869,9 @@ function aggregate(){
     const k = keyOf(n);
     if(!k) return;
     if(map.has(k)) return;
-    map.set(k, {key:k, name:(n||"").trim(), perMin:0, need:0, src:"manual"});
+    /* «Новый ресурс» — заглушка: имя ещё не вписано, в поле показываем пустоту с подсказкой */
+    map.set(k, {key:k, name:(n||"").trim(), perMin:0, need:0, src:"manual",
+                fresh:/^Новый ресурс( \d+)?$/.test((n||"").trim())});
   });
 
   /* одиночные ресурсы (блок «Одиночные») — их «нужно» тоже входит в графу и в ИТОГО */
@@ -980,9 +982,10 @@ function ddEnsure(){
 }
 function ddNames(){
   const set = new Set();
-  st.items.forEach(it=>(it.ing||[]).forEach(g=>{ const t=(g.name||"").trim(); if(t) set.add(t); }));
-  (st.manual||[]).forEach(n=>{ const t=(n||"").trim(); if(t) set.add(t); });
-  document.querySelectorAll("#tSum input.rname").forEach(i=>{ const t=(i.value||"").trim(); if(t) set.add(t); });
+  const isFresh = t => /^Новый ресурс( \d+)?$/.test(t);   /* заглушки не показываем */
+  st.items.forEach(it=>(it.ing||[]).forEach(g=>{ const t=(g.name||"").trim(); if(t && !isFresh(t)) set.add(t); }));
+  (st.manual||[]).forEach(n=>{ const t=(n||"").trim(); if(t && !isFresh(t)) set.add(t); });
+  document.querySelectorAll("#tSum input.rname").forEach(i=>{ const t=(i.value||"").trim(); if(t && !isFresh(t)) set.add(t); });
   return [...set];
 }
 const ddIsName = t => t instanceof HTMLInputElement && (t.classList.contains("rname") || t.dataset.f === "iname" || t.dataset.pn !== undefined);
@@ -1336,7 +1339,7 @@ function update(){
   A.rows.forEach(r=>{
     const tr = el("tr");
     tr.innerHTML = `
-      <td><span class="rwrap"><button class="chip" data-colkey="${r.key}" style="background:${colorOf(r.key)}" title="Цвет ресурса — нажмите, чтобы поменять"></button><input type="text" class="rname" data-rn="${r.key}" data-src="${r.src||"recipe"}" value="${escapeAttr(r.name)}" title="${r.src==="manual"?"Название отдельного ресурса":"Изменить название — применится во всех рецептах"}"></span></td>
+      <td><span class="rwrap"><button class="chip" data-colkey="${r.key}" style="background:${colorOf(r.key)}" title="Цвет ресурса — нажмите, чтобы поменять"></button><input type="text" class="rname" data-rn="${r.key}" data-src="${r.src||"recipe"}" value="${escapeAttr(r.fresh ? "" : r.name)}" placeholder="Название ресурса" autocomplete="off" spellcheck="false" title="${r.src==="manual"?"Название отдельного ресурса — просто начните печатать":"Изменить название — применится во всех рецептах"}"></span></td>
       <td class="num" data-l="⚡ за 1 шт."><input type="text" inputmode="numeric" class="ov ${r.en?"on":""}" data-en="${r.key}" value="${r.en?r.en:""}" placeholder="0" title="Сколько энергии тратится на 1 единицу ресурса"></td>
       <td class="num" data-l="Нужно всего">
         <span class="ovwrap"><input type="text" inputmode="numeric" class="ov" data-ov="${r.key}" value="${r.need?fmt(r.need):""}" placeholder="${fmt(r.need)}" title="${r.hasOv?"Вписано вручную — очистите поле, чтобы вернуть расчёт по рецепту":"Впишите своё значение — расчёт пойдёт от него"}"></span>
@@ -1357,7 +1360,7 @@ function update(){
 
   /* --- подсказки по списку ресурсов --- */
   const dl = document.getElementById("dlRes");
-  dl.innerHTML = A.rows.map(r=>`<option value="${escapeAttr(r.name)}">`).join("");
+  dl.innerHTML = A.rows.filter(r=>!r.fresh).map(r=>`<option value="${escapeAttr(r.name)}">`).join("");
 
   /* --- рецепты: итог двумя вариантами --- */
   const rAxeT = rubyOf(eAxeT), rBothT = rubyOf(eBothT);
@@ -1491,7 +1494,7 @@ function update(){
     b.onclick = ()=>{
       const k = b.dataset.delres;
       const nm = Array.prototype.find.call(document.querySelectorAll("#tSum .rname"), i=>i.dataset.rn === k);
-      const name = nm ? nm.value.trim() : k;
+      const name = (nm && nm.value.trim()) || (Array.prototype.find.call(st.manual||[], m=>keyOf(m)===k)) || "этот ресурс";
       if(!confirm(`Удалить «${name}» насовсем?\n\nРесурс уберётся из таблицы и из всех рецептов, где используется.\nВернуть его потом можно только заново.`)) return;
       /* убрать из ручного списка — всегда, даже если ресурс пришёл из рецепта */
       const mi = (st.manual||[]).findIndex(m=>keyOf(m)===k);
