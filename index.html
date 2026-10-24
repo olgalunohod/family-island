@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
-<!-- версия: 2026-10-24 — кнопка «🧹 очистить» стирает весь текущий фестиваль (с подтверждением, другие фестивали целы); кнопка «➕ добавить все» переносит в одиночные ресурсы разом всё из таблицы цен; жёлтая «➕ Ресурс» перенесена вниз, к самому списку; новый ресурс в таблице: поле пустое с серой подсказкой, просто печатаете название (как у изделий); итог под таблицей считается с топором (1 удар = 2 шт.), как и подсчёты сбоку; клавиатура не поднимается ни при одном добавлении (ресурс в рецепт, изделие, ресурс в таблицу, одиночный); убран крестик ✕ у «Нужно всего»; палитра цветов (20 цветов + свой); порядок ресурсов — как добавлены; тап по ▲▼ = один шаг; нижнее меню; светлая тема; «скопировать план»; установка как приложение -->
+<!-- версия: 2026-10-24 — порядок ресурсов в таблице цен закреплён: строка занимает место один раз (как создали или как расставили ↑↓) и при изменении любых количеств больше не прыгает; у нового рецепта поле «Нужно всего» пустое с серой подсказкой «1» — печатайте своё число сразу, ничего не надо стирать (пока пусто — считаем 1); кнопка «🧹 очистить» стирает весь текущий фестиваль (с подтверждением, другие фестивали целы); кнопка «➕ добавить все» переносит в одиночные ресурсы разом всё из таблицы цен; жёлтая «➕ Ресурс» перенесена вниз, к самому списку; новый ресурс в таблице: поле пустое с серой подсказкой, просто печатаете название (как у изделий); итог под таблицей считается с топором (1 удар = 2 шт.), как и подсчёты сбоку; клавиатура не поднимается ни при одном добавлении (ресурс в рецепт, изделие, ресурс в таблицу, одиночный); убран крестик ✕ у «Нужно всего»; палитра цветов (20 цветов + свой); порядок ресурсов — как добавлены; тап по ▲▼ = один шаг; нижнее меню; светлая тема; «скопировать план»; установка как приложение -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -870,15 +870,19 @@ function aggregate(){
     const c = itemCalc(it);
     totalQty += c.qty;
     (it.ing||[]).forEach(g=>{
-      const per = ci(g.per), k = keyOf(g.name);
-      if(!per || !k) return;
-      if(!map.has(k)) map.set(k, {key:k, name:(g.name||"").trim(), perMin:per, need:0, src:"recipe"});
+      const k = keyOf(g.name);
+      if(!k) return;
+      if(!map.has(k)) map.set(k, {key:k, name:(g.name||"").trim(), perMin:0, need:0, src:"recipe"});
       const a = map.get(k);
-      /* «Нужно всего» — сколько придётся самой собрать при работе в мастерской 3×4 */
-      a.need += c.madeYes * per;
-      a.perMin = Math.min(a.perMin, per);
       const nm = (g.name||"").trim();
       if(nm.length < a.name.length) a.name = nm;
+      const per = ci(g.per);
+      /* «на 1 шт.» ещё не вписано — строка в таблице остаётся, просто нужды пока нет:
+         иначе ресурс выпадал из своего места и прыгал туда-сюда при правке количества */
+      if(!per) return;
+      if(!a.perMin) a.perMin = per; else a.perMin = Math.min(a.perMin, per);
+      /* «Нужно всего» — сколько придётся самой собрать при работе в мастерской 3×4 */
+      a.need += c.madeYes * per;
     });
   });
 
@@ -895,17 +899,26 @@ function aggregate(){
   /* одиночные ресурсы (блок «Одиночные») — их «нужно» тоже входит в графу и в ИТОГО */
   let plainNeed = 0;
   plainRows().forEach(p=>{
-    const k = keyOf(p.name), q = ci(p.qty);
-    if(!k || !q) return;
-    plainNeed += q;
+    const k = keyOf(p.name);
+    if(!k) return;
     if(!map.has(k)) map.set(k, {key:k, name:(p.name||"").trim(), perMin:0, need:0, src:"manual"});
+    const q = ci(p.qty);
+    /* количество ещё не вписано — строка на месте, нужды пока нет:
+       иначе ресурс выпадал из таблицы и возвращался уже в другом месте */
+    if(!q) return;
+    plainNeed += q;
     map.get(k).need += q;
   });
 
-  /* порядок — как ресурсы добавлялись (порядок появления в рецептах и списках);
-     ручной порядок из кнопок ↑↓ важнее, но «по количеству» больше не сортируем */
+  /* порядок строк закреплён: ресурс занимает место — как добавлялся
+     или как расставили кнопками ↑↓ — и дальше от количеств уже не прыгает */
   const ord = Array.isArray(st.resOrder) ? st.resOrder : [];
-  const pos = k => { const i = ord.indexOf(k); return i < 0 ? Infinity : i; };
+  const idx = new Map();
+  const seed = k => { const n = (k||"").toLowerCase().trim(); if(n && !idx.has(n)) idx.set(n, idx.size); };
+  /* 1) уже закреплённый порядок из кнопок ↑↓ — главный */
+  ord.forEach(seed);
+  /* 2) порядок, в котором ресурсы создавались («➕ Ресурс») */
+  (st.manual||[]).forEach(seed);
   const rows = [...map.values()]
     .map(r=>{
     const ov = st.ov[r.key];
@@ -918,7 +931,14 @@ function aggregate(){
     /* энергия — с топором (1 удар = 2 шт.), как в подсчётах по рецептам и одиночным */
     return Object.assign({}, r, {hasOv, need, plan, done, left, en,
       energy:Math.ceil(left/2)*en, ruby:rubyOf(Math.ceil(left/2)*en)});
-  }).sort((a,b)=> pos(a.key) - pos(b.key));
+  });
+  /* неизвестные раньше ресурсы встают в конец — и сразу закрепляются навсегда,
+     чтобы порядок был один и тот же при любом пересчёте */
+  rows.forEach(r=>{ if(!idx.has(r.key)) idx.set(r.key, idx.size); });
+  rows.sort((a,b)=> idx.get(a.key) - idx.get(b.key));
+  const pinned = ord.slice();
+  rows.forEach(r=>{ if(pinned.indexOf(r.key) < 0) pinned.push(r.key); });
+  st.resOrder = pinned;
 
   const T = rows.reduce((s,r)=>({
     need:s.need+r.need, spendNo:s.spendNo+r.plan.spendNo, spendYes:s.spendYes+r.plan.spendYes,
@@ -1195,7 +1215,7 @@ function renderItems(){
         <button class="nv" data-imove="${i}:1" title="Переместить рецепт вниз">↓</button>
         <input type="text" class="nm" data-f="name" data-i="${i}" value="${escapeAttr(it.name)}" placeholder="Название изделия">
         <button class="del del-m" data-del-item="${i}" title="удалить изделие">🗑</button>
-        <span class="ifld" data-l="Нужно всего"><input type="number" class="qt" data-f="qty" data-i="${i}" min="0" value="${ci(it.qty)}"><span class="muted">шт.</span></span>
+        <span class="ifld" data-l="Нужно всего"><input type="number" class="qt" data-f="qty" data-i="${i}" min="0" value="${it.qtyFresh ? "" : ci(it.qty)}" placeholder="1"><span class="muted">шт.</span></span>
         <span class="ifld" data-l="💎 игра просит"><input type="number" class="rb" data-f="rub" data-i="${i}" min="0" value="${ci(it.rub)}"><span class="muted">руб.</span></span>
         <span class="sp"></span>
         <button class="del del-d" data-del-item="${i}" title="удалить изделие">🗑</button>
@@ -1244,7 +1264,12 @@ function renderItems(){
     inp.addEventListener("input", ()=>{
       const i = +inp.dataset.i, f = inp.dataset.f;
       if(f === "name") st.items[i].name = inp.value;
-      else if(f === "qty") st.items[i].qty = inp.value;
+      else if(f === "qty"){
+        /* поле пустое (новое изделие или очищено) — показываем подсказку «1» и считаем 1,
+           как только впишете своё число, считаем уже его */
+        if(inp.value === ""){ st.items[i].qty = 1; st.items[i].qtyFresh = 1; }
+        else { st.items[i].qty = inp.value; delete st.items[i].qtyFresh; }
+      }
       else if(f === "rub") st.items[i].rub = inp.value;
       else if(f === "iname"){
         /* старое название сохраняем не здесь, а по окончании ввода (см. change выше) */
@@ -1566,7 +1591,9 @@ document.getElementById("btnAddRes").onclick = ()=>{
   if(inp) inp.scrollIntoView({block:"center"});
 };
 document.getElementById("btnAddItem").onclick = ()=>{
-  st.items.push({name:"", qty:1, rub:0, ing:[{name:"", per:1}]});
+  /* qtyFresh: поле «Нужно всего» показываем пустым с серой подсказкой «1» —
+     печатаете своё число сразу, ничего не надо стирать. Считаем при этом 1. */
+  st.items.push({name:"", qty:1, qtyFresh:1, rub:0, ing:[{name:"", per:1}]});
   renderItems(); update(); save("изделие добавлено");
   /* клавиатуру не поднимаем — карточка просто встаёт последней */
   const cards = document.querySelectorAll("#items .item");
