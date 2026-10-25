@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
-<!-- версия: 2026-10-25 — вшитые данные обновлены из облака (25.10 11:30, 9 фестивалей, включая «Рыцарь на один день»); порядок ресурсов в таблице цен закреплён: строка занимает место один раз (как создали или как расставили ↑↓) и при изменении любых количеств больше не прыгает; у нового рецепта поле «Нужно всего» пустое с серой подсказкой «1» — печатайте своё число сразу, ничего не надо стирать (пока пусто — считаем 1); кнопка «🧹 очистить» стирает весь текущий фестиваль (с подтверждением, другие фестивали целы); кнопка «➕ добавить все» переносит в одиночные ресурсы разом всё из таблицы цен; жёлтая «➕ Ресурс» перенесена вниз, к самому списку; новый ресурс в таблице: поле пустое с серой подсказкой, просто печатаете название (как у изделий); итог под таблицей считается с топором (1 удар = 2 шт.), как и подсчёты сбоку; клавиатура не поднимается ни при одном добавлении (ресурс в рецепт, изделие, ресурс в таблицу, одиночный); убран крестик ✕ у «Нужно всего»; палитра цветов (20 цветов + свой); порядок ресурсов — как добавлены; тап по ▲▼ = один шаг; нижнее меню; светлая тема; «скопировать план»; установка как приложение -->
+<!-- версия: 2026-10-25 (2) — синхронизация больше не теряет фестивали: при совпадении устройств списки фестивалей объединяются (что есть хоть где-то — остаётся), намеренно удалённые не возвращаются; облачные данные восстановлены (9 фестивалей, включая «Рыцарь на один день»); порядок ресурсов в таблице цен закреплён: строка занимает место один раз (как создали или как расставили ↑↓) и при изменении любых количеств больше не прыгает; у нового рецепта поле «Нужно всего» пустое с серой подсказкой «1» — печатайте своё число сразу, ничего не надо стирать (пока пусто — считаем 1); кнопка «🧹 очистить» стирает весь текущий фестиваль (с подтверждением, другие фестивали целы); кнопка «➕ добавить все» переносит в одиночные ресурсы разом всё из таблицы цен; жёлтая «➕ Ресурс» перенесена вниз, к самому списку; новый ресурс в таблице: поле пустое с серой подсказкой, просто печатаете название (как у изделий); итог под таблицей считается с топором (1 удар = 2 шт.), как и подсчёты сбоку; клавиатура не поднимается ни при одном добавлении (ресурс в рецепт, изделие, ресурс в таблицу, одиночный); убран крестик ✕ у «Нужно всего»; палитра цветов (20 цветов + свой); порядок ресурсов — как добавлены; тап по ▲▼ = один шаг; нижнее меню; светлая тема; «скопировать план»; установка как приложение -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -659,6 +659,8 @@ function festRen(){
   if(!t || t === st.cur) return;
   if(!festNameFree(t)){ save("фестиваль с таким названием уже есть"); return; }
   festSave();
+  if(!st.delFests || typeof st.delFests !== "object") st.delFests = {};
+  st.delFests[st.cur] = Date.now();   /* старое имя помечаем удалённым, чтобы не вернулось при синхронизации */
   st.fests[t] = st.fests[st.cur];
   delete st.fests[st.cur];
   st.cur = t;
@@ -669,6 +671,8 @@ function festDel(){
   const names = Object.keys(st.fests);
   if(names.length < 2){ save("нельзя удалить последний фестиваль"); return; }
   if(!confirm("Удалить фестиваль «" + st.cur + "»?")) return;
+  if(!st.delFests || typeof st.delFests !== "object") st.delFests = {};
+  st.delFests[st.cur] = Date.now();   /* пометка «удалён намеренно» — чтобы синхронизация не вернула его обратно */
   delete st.fests[st.cur];
   const first = Object.keys(st.fests)[0];
   festApply(st.fests[first]);
@@ -1833,6 +1837,35 @@ function stIsExample(s){
   try{ return !!s && JSON.stringify(s) === JSON.stringify(DEFAULT); }catch(e){ return false; }
 }
 
+/* ---- защита от потери фестивалей при синхронизации ----
+   Бывает так: на одном устройстве осталась старая копия и записывает себя в облако —
+   и новый фестиваль с другого устройства пропадает. Здесь списки фестивалей объединяются:
+   что есть хоть в одном месте — остаётся. Намеренно удалённые (delFests) не возвращаются. */
+function tombMap(a, b){
+  return Object.assign({}, (a && a.delFests) || {}, (b && b.delFests) || {});
+}
+/* добавляет в dst фестивали из src, которых там нет; возвращает имена добавленных */
+function mergeFests(dst, src){
+  if(!dst || !src || !dst.fests || !src.fests) return [];
+  const tomb = tombMap(dst, src);
+  Object.keys(dst.fests).forEach(n=>{ if(tomb[n]) delete dst.fests[n]; });   /* удалённые намеренно — убираем */
+  const added = [];
+  Object.keys(src.fests).forEach(n=>{
+    if(dst.fests[n] || tomb[n]) return;
+    dst.fests[n] = JSON.parse(JSON.stringify(src.fests[n]));
+    added.push(n);
+  });
+  dst.delFests = tomb;
+  return added;
+}
+/* после объединения текущий фестиваль мог исчезнуть — переключаемся на первый */
+function festFixCur(){
+  if(!st.fests || !st.fests[st.cur]){
+    const first = Object.keys(st.fests || {})[0];
+    if(first){ st.cur = first; festApply(st.fests[first]); }
+  }
+}
+
 /* сохранить в облако (force=true — минуя проверки, только когда облако явно надо починить) */
 async function syncPush(force){
   if(!syncCfg || syncBusy) return;
@@ -1850,6 +1883,17 @@ async function syncPush(force){
         }
       }catch(e){}
       if(cloudSt && Array.isArray(cloudSt.items)){
+        /* сначала объединяем фестивали: чего нет локально, но есть в облаке — добавляем, а не затираем */
+        if(cloudSt.fests && st && st.fests){
+          festSave();
+          const keep = mergeFests(st, cloudSt);
+          if(keep.length){
+            festFixCur(); festsEnsure();
+            syncSettings(); renderFestBar(); renderItems(); renderPlain(); update();
+            try{ localStorage.setItem(LS, JSON.stringify(st)); }catch(e){}
+            syncStatus("подтянул из облака фестивали: " + keep.join(", "), "ok");
+          }
+        }
         /* в облаке правки новее, а своих свежих нет — пусть облако победит */
         if(cloudAt > (syncCfg.at || 0) && !((syncCfg.led || 0) > cloudAt)){
           syncBusy = false; syncStatus("в облаке данные новее — забираю их", ""); syncPull(); return;
@@ -1901,13 +1945,19 @@ async function syncPull(){
         syncPush(true); return;
       }
       applyingCloud = true;
-      st = Object.assign({}, DEFAULT, cloud.st);
+      festSave();                                     /* текущий фестиваль — в общий набор */
+      const cs = JSON.parse(JSON.stringify(cloud.st));
+      const kept = mergeFests(cs, st);                 /* фестивали, которых нет в облаке, не теряем */
+      st = Object.assign({}, DEFAULT, cs);
       festsEnsure(); applyBord(); fixCols();
       try{ localStorage.setItem(LS, JSON.stringify(st)); }catch(e){}
       syncSettings(); renderFestBar(); renderItems(); renderPlain(); update();
       applyingCloud = false;
       syncCfg.at = cloud.at; syncSaveCfg();
-      syncStatus("загружено из облака " + new Date().toLocaleTimeString(), "ok");
+      syncStatus(kept.length
+        ? ("загружено из облака, ваши фестивали сохранены: " + kept.join(", "))
+        : ("загружено из облака " + new Date().toLocaleTimeString()), "ok");
+      if(kept.length) syncSchedule();                  /* досылаем их в облако, чтобы не потерялись */
     } else {
       syncStatus("синхронизировано " + new Date().toLocaleTimeString(), "ok");
     }
