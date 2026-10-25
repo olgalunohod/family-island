@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
-<!-- версия: 2026-10-25 (2) — синхронизация больше не теряет фестивали: при совпадении устройств списки фестивалей объединяются (что есть хоть где-то — остаётся), намеренно удалённые не возвращаются; облачные данные восстановлены (9 фестивалей, включая «Рыцарь на один день»); порядок ресурсов в таблице цен закреплён: строка занимает место один раз (как создали или как расставили ↑↓) и при изменении любых количеств больше не прыгает; у нового рецепта поле «Нужно всего» пустое с серой подсказкой «1» — печатайте своё число сразу, ничего не надо стирать (пока пусто — считаем 1); кнопка «🧹 очистить» стирает весь текущий фестиваль (с подтверждением, другие фестивали целы); кнопка «➕ добавить все» переносит в одиночные ресурсы разом всё из таблицы цен; жёлтая «➕ Ресурс» перенесена вниз, к самому списку; новый ресурс в таблице: поле пустое с серой подсказкой, просто печатаете название (как у изделий); итог под таблицей считается с топором (1 удар = 2 шт.), как и подсчёты сбоку; клавиатура не поднимается ни при одном добавлении (ресурс в рецепт, изделие, ресурс в таблицу, одиночный); убран крестик ✕ у «Нужно всего»; палитра цветов (20 цветов + свой); порядок ресурсов — как добавлены; тап по ▲▼ = один шаг; нижнее меню; светлая тема; «скопировать план»; установка как приложение -->
+<!-- версия: 2026-10-25 (3) — в блоке синхронизации появилась кнопка «⬇️ взять из облака» (загрузить данные с сервера принудительно) и метка сборки; сверка с облаком теперь раз в минуту, а зависшая синхронизация разблокируется сама; «вшитый набор» больше не мешает загрузке облачных данных; синхронизация не теряет фестивали: при совпадении устройств списки фестивалей объединяются (что есть хоть где-то — остаётся), намеренно удалённые не возвращаются; облачные данные восстановлены (9 фестивалей, включая «Рыцарь на один день»); порядок ресурсов в таблице цен закреплён: строка занимает место один раз (как создали или как расставили ↑↓) и при изменении любых количеств больше не прыгает; у нового рецепта поле «Нужно всего» пустое с серой подсказкой «1» — печатайте своё число сразу, ничего не надо стирать (пока пусто — считаем 1); кнопка «🧹 очистить» стирает весь текущий фестиваль (с подтверждением, другие фестивали целы); кнопка «➕ добавить все» переносит в одиночные ресурсы разом всё из таблицы цен; жёлтая «➕ Ресурс» перенесена вниз, к самому списку; новый ресурс в таблице: поле пустое с серой подсказкой, просто печатаете название (как у изделий); итог под таблицей считается с топором (1 удар = 2 шт.), как и подсчёты сбоку; клавиатура не поднимается ни при одном добавлении (ресурс в рецепт, изделие, ресурс в таблицу, одиночный); убран крестик ✕ у «Нужно всего»; палитра цветов (20 цветов + свой); порядок ресурсов — как добавлены; тап по ▲▼ = один шаг; нижнее меню; светлая тема; «скопировать план»; установка как приложение -->
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -418,9 +418,11 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
     <div class="toolbar">
       <input type="text" id="syncKey" placeholder="ключ синхронизации" autocomplete="off" spellcheck="false">
       <button class="primary" id="syncConn">Подключить</button>
+      <button id="syncNow" style="display:none" title="Загрузить данные из облака прямо сейчас">⬇️ взять из облака</button>
       <button id="syncDis" style="display:none">Отключить</button>
     </div>
     <p class="note">Ключ — как пароль: у кого он есть, тот может читать и менять ваши данные. Другу синхронизация не нужна: без ключа данные остаются локальными.</p>
+    <p class="note muted" id="syncBuild" style="font-size:11px">сборка 25.10 (3)</p>
     </div>
   </div>
 
@@ -648,6 +650,7 @@ function festAdd(){
   while(!festNameFree(n)) n = (st.cur || "Фестиваль") + " — копия " + (x++);
   festSave();
   st.fests[n] = JSON.parse(JSON.stringify(st.fests[st.cur]));
+  if(st.delFests) delete st.delFests[n];      /* имя снова занято — старая пометка об удалении не нужна */
   st.cur = n;
   renderFestBar(); save("фестиваль «" + n + "» создан — переименуйте кнопкой ✏️");
 }
@@ -661,6 +664,7 @@ function festRen(){
   festSave();
   if(!st.delFests || typeof st.delFests !== "object") st.delFests = {};
   st.delFests[st.cur] = Date.now();   /* старое имя помечаем удалённым, чтобы не вернулось при синхронизации */
+  if(st.delFests[t]) delete st.delFests[t];   /* новое имя занято — пометка не нужна */
   st.fests[t] = st.fests[st.cur];
   delete st.fests[st.cur];
   st.cur = t;
@@ -673,6 +677,8 @@ function festDel(){
   if(!confirm("Удалить фестиваль «" + st.cur + "»?")) return;
   if(!st.delFests || typeof st.delFests !== "object") st.delFests = {};
   st.delFests[st.cur] = Date.now();   /* пометка «удалён намеренно» — чтобы синхронизация не вернула его обратно */
+  const _dn = Object.keys(st.delFests);
+  if(_dn.length > 40){ _dn.sort((a,b)=>st.delFests[a]-st.delFests[b]).slice(0, _dn.length - 40).forEach(k=>delete st.delFests[k]); }
   delete st.fests[st.cur];
   const first = Object.keys(st.fests)[0];
   festApply(st.fests[first]);
@@ -1817,7 +1823,9 @@ document.getElementById("plainAddAll").onclick = ()=>{
 const SYNCLS = "fi_sync_cfg_v1";
 const SYNCFILE = "family-island-data.json";
 let syncCfg = null;        /* {tok, gid, at, led} — at: время данных в облаке, led: время последней своей правки */
-let syncTimer = null, syncBusy = false, applyingCloud = false;
+let syncTimer = null, syncBusy = false, syncBusyAt = 0, applyingCloud = false;
+/* если предыдущая синхронизация почему-то не завершилась — не залипаем навсегда */
+function syncUnstick(){ if(syncBusy && syncBusyAt && (Date.now() - syncBusyAt > 12000)) syncBusy = false; }
 
 function syncLoadCfg(){ try{ const r = localStorage.getItem(SYNCLS); if(r) syncCfg = JSON.parse(r); }catch(e){} 
   if(!syncCfg || typeof syncCfg !== "object" || !syncCfg.tok || !syncCfg.gid) syncCfg = null; }
@@ -1830,6 +1838,8 @@ function syncUI(){
   document.getElementById("syncKey").style.display = on ? "none" : "";
   document.getElementById("syncConn").style.display = on ? "none" : "";
   document.getElementById("syncDis").style.display = on ? "" : "none";
+  const now = document.getElementById("syncNow");
+  if(now) now.style.display = on ? "" : "none";
 }
 
 /* данные полностью совпадают со вшитым стартовым набором? — такое не должно затирать настоящие данные в облаке */
@@ -1865,11 +1875,26 @@ function festFixCur(){
     if(first){ st.cur = first; festApply(st.fests[first]); }
   }
 }
+/* самовосстановление: фестиваль есть во вшитом наборе, но пропал и локально, и в облаке
+   (так бывает, когда старое устройство затирает облако) — возвращаем его.
+   Намеренно удалённые не возвращаем: для них есть пометка delFests. */
+function restoreFromDefault(){
+  if(!st || !st.fests || !DEFAULT || !DEFAULT.fests) return [];
+  const tomb = st.delFests || {};
+  const added = [];
+  Object.keys(DEFAULT.fests).forEach(n=>{
+    if(st.fests[n] || tomb[n]) return;
+    st.fests[n] = JSON.parse(JSON.stringify(DEFAULT.fests[n]));
+    added.push(n);
+  });
+  return added;
+}
 
 /* сохранить в облако (force=true — минуя проверки, только когда облако явно надо починить) */
 async function syncPush(force){
+  syncUnstick();
   if(!syncCfg || syncBusy) return;
-  syncBusy = true;
+  syncBusy = true; syncBusyAt = Date.now();
   try{
     if(!force){
       /* перед отправкой сверяемся с облаком: старое устройство не должно затирать новые облачные данные */
@@ -1887,19 +1912,21 @@ async function syncPush(force){
         if(cloudSt.fests && st && st.fests){
           festSave();
           const keep = mergeFests(st, cloudSt);
-          if(keep.length){
+          const back = restoreFromDefault();
+          const got = keep.concat(back);
+          if(got.length){
             festFixCur(); festsEnsure();
             syncSettings(); renderFestBar(); renderItems(); renderPlain(); update();
             try{ localStorage.setItem(LS, JSON.stringify(st)); }catch(e){}
-            syncStatus("подтянул из облака фестивали: " + keep.join(", "), "ok");
+            syncStatus("вернул фестивали: " + got.join(", "), "ok");
           }
         }
         /* в облаке правки новее, а своих свежих нет — пусть облако победит */
         if(cloudAt > (syncCfg.at || 0) && !((syncCfg.led || 0) > cloudAt)){
           syncBusy = false; syncStatus("в облаке данные новее — забираю их", ""); syncPull(); return;
         }
-        /* локально вшитый набор, а в облаке настоящие данные — вшитое не должно затирать настоящие */
-        if(stIsExample(st) && !stIsExample(cloudSt)){
+        /* здесь вшитый набор больше не считаем «пустым» — в нём лежат ваши настоящие данные */
+        if(stIsExample(st) && !(syncCfg.at || 0) && !Object.keys(st.fests || {}).length){
           syncBusy = false; syncStatus("здесь вшитый набор — беру данные из облака", ""); syncPull(); return;
         }
       }
@@ -1920,9 +1947,10 @@ async function syncPush(force){
 function syncSchedule(){ if(!syncCfg) return; clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 3000); }
 
 /* загрузить из облака (на старте и когда возвращаетесь на вкладку) */
-async function syncPull(){
+async function syncPull(force){
+  syncUnstick();
   if(!syncCfg || syncBusy) return;
-  syncBusy = true;
+  syncBusy = true; syncBusyAt = Date.now();
   try{
     const r = await fetch("https://api.github.com/gists/" + syncCfg.gid, {headers: syncHdrs()});
     if(!r.ok) throw new Error("GitHub ответил " + r.status);
@@ -1931,18 +1959,12 @@ async function syncPull(){
     if(!f || !f.content){ syncBusy = false; syncStatus("в облаке пока пусто — сохраню отсюда", ""); syncPush(); return; }
     const cloud = JSON.parse(f.content);
     if(!cloud || !cloud.st || !Array.isArray(cloud.st.items)){ syncBusy = false; return; }
-    if(cloud.at > (syncCfg.at || 0)){
-      /* свои правки новее облачных — отправим свои, облако не трогаем */
-      if((syncCfg.led || 0) > (syncCfg.at || 0) && syncCfg.led > cloud.at){
+    if(force || cloud.at > (syncCfg.at || 0)){
+      /* свои правки новее облачных — отправим свои, облако не трогаем (но не когда нажали «взять из облака») */
+      if(!force && (syncCfg.led || 0) > (syncCfg.at || 0) && syncCfg.led > cloud.at){
         syncBusy = false;
         syncStatus("правки на этом устройстве новее — отправляю в облако", "");
         syncPush(); return;
-      }
-      /* в облаке оказался вшитый набор, а здесь настоящие данные — не затираем, отправим свои */
-      if(stIsExample(cloud.st) && !stIsExample(st)){
-        syncBusy = false;
-        syncStatus("в облаке вшитый набор — отправляю отсюда настоящие данные", "");
-        syncPush(true); return;
       }
       applyingCloud = true;
       festSave();                                     /* текущий фестиваль — в общий набор */
@@ -1950,14 +1972,15 @@ async function syncPull(){
       const kept = mergeFests(cs, st);                 /* фестивали, которых нет в облаке, не теряем */
       st = Object.assign({}, DEFAULT, cs);
       festsEnsure(); applyBord(); fixCols();
+      const back = restoreFromDefault();          /* пропавший фестиваль вернём из вшитого набора */
       try{ localStorage.setItem(LS, JSON.stringify(st)); }catch(e){}
       syncSettings(); renderFestBar(); renderItems(); renderPlain(); update();
       applyingCloud = false;
       syncCfg.at = cloud.at; syncSaveCfg();
-      syncStatus(kept.length
-        ? ("загружено из облака, ваши фестивали сохранены: " + kept.join(", "))
+      syncStatus((kept.length || back.length)
+        ? ("загружено из облака, фестивали на месте: " + kept.concat(back).join(", "))
         : ("загружено из облака " + new Date().toLocaleTimeString()), "ok");
-      if(kept.length) syncSchedule();                  /* досылаем их в облако, чтобы не потерялись */
+      if(kept.length || back.length) syncSchedule();   /* досылаем их в облако, чтобы не потерялись */
     } else {
       syncStatus("синхронизировано " + new Date().toLocaleTimeString(), "ok");
     }
@@ -2015,17 +2038,14 @@ async function syncConnect(){
     syncCfg = {tok: tok, gid: g.id, at: 0, led: 0};
     syncSaveCfg(); syncUI();
     if(cloud && cloud.st && Array.isArray(cloud.st.items)){
-      /* в облаке вшитый набор, а здесь настоящие данные — не затираем, отправим свои */
-      if(stIsExample(cloud.st) && !stIsExample(st)){
-        syncCfg.at = cloud.at || 0; syncSaveCfg();
-        syncStatus("в облаке вшитый набор — отправляю отсюда настоящие данные", "");
-        syncPush(true);
-        return;
-      }
       syncCfg.at = cloud.at || 0; syncSaveCfg();
       applyingCloud = true;
-      st = Object.assign({}, DEFAULT, cloud.st);
+      festSave();
+      const cs = JSON.parse(JSON.stringify(cloud.st));
+      mergeFests(cs, st);                      /* фестивали, которых нет в облаке, не теряем */
+      st = Object.assign({}, DEFAULT, cs);
       festsEnsure(); applyBord(); fixCols();
+      restoreFromDefault();
       try{ localStorage.setItem(LS, JSON.stringify(st)); }catch(e){}
       syncSettings(); renderFestBar(); renderItems(); renderPlain(); update();
       applyingCloud = false;
@@ -2070,6 +2090,7 @@ document.querySelectorAll(".foldh").forEach(h=>{
 document.getElementById("syncConn").onclick = ()=>syncConnect();
 document.getElementById("syncDis").onclick = ()=>syncDisconnect();
 document.getElementById("syncKey").addEventListener("keydown", e=>{ if(e.key === "Enter") syncConnect(); });
+document.getElementById("syncNow").onclick = ()=>{ syncStatus("беру данные из облака…", ""); syncPull(true); };
 syncLoadCfg();
 syncUI();
 /* ссылка-ключ: .../#sync=ТОКЕН — открыли на новом устройстве, вставлять ничего не надо */
@@ -2088,6 +2109,8 @@ let syncFromLink = false;
 if(!syncFromLink && syncCfg){ syncStatus("проверяю облако…", ""); syncPull(); }
 document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) syncPull(); });
 window.addEventListener("focus", ()=>syncPull());
+/* раз в минуту тихо сверяемся с облаком: если на другом устройстве что-то добавили — появится само */
+setInterval(()=>{ if(!document.hidden) syncPull(); }, 60000);
 
 /* ============ нижнее меню (телефон): прыжок к блоку + подсветка текущего ============ */
 (function(){
