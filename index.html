@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
-<!-- версия: 2026-11-17 (1) — во вшитый набор добавлены три новых фестиваля: «Цифровой мир», «Истории Дня Независимости: Часть 4», «Разговор по душам» — всего 22 фестиваля, всё как в облаке;
+<!-- версия: 2026-11-17 (2) — исправлено: длинное название фестиваля («Истории Дня Независимости: Часть 4») растягивало список «Фестиваль» и страница уезжала вбок; теперь список всегда по ширине карточки, длинные названия подрезаются, а полное название видно при нажатии;
+2026-11-17 (1) — во вшитый набор добавлены три новых фестиваля: «Цифровой мир», «Истории Дня Независимости: Часть 4», «Разговор по душам» — всего 22 фестиваля, всё как в облаке;
 2026-11-09 (1) — из всех рецептов убрана строка «💎 игра просит» (она не заполнялась, данные в ней не потерялись — просто не показываются); значок 🗑 у рецепта теперь стоит на одной строке с названием (и на телефоне, и на компьютере); под общей суммой теперь сравнение двух вариантов сбора — с мастерской 3×4 и без неё; во вшитый набор добавлен фестиваль «Сигнал из будущего» — всего 19 фестивалей, всё как в облаке;
 2026-11-06 (1) — во вшитый набор добавлены пять новых фестивалей: «День урожая», «Парад индейки», «День роскоши», «Магия рынка», «Эпичный переезд» — всего 18 фестивалей, всё как в облаке;
 2026-11-03 (2) — вернула правки из истории облака: цены «Тайн Пампкинвании» (чеснок 38, тыква 54, роза 67, капля 79, перо 92) и переименование Чернила→Перо, цены «Трубы» (166) и «Книги» (204) в «Сказке о яблоке»; добавлена защита: если на этом устройстве данных заметно меньше, чем в облаке, сайт больше не отправляет их в облако (раньше сброшенное устройство могло затереть всё), вместо этого предлагает «⬇️ взять из облака», а при осознанном удалении есть кнопка «⬆️ всё равно отправить»; во вшитый набор добавлены фестивали «Спасти игру» и «Маски и пляски» — 13 фестивалей;
@@ -137,8 +138,8 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .nv:hover{color:var(--acc);border-color:var(--acc)}
 .festbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:rgba(0,0,0,.18)}
 #btnAddRes{display:block;width:100%;margin:0 0 8px;padding:9px;font-size:14px}
-.festbar label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--dim)}
-.festbar select{min-width:150px;flex:1 1 150px}
+.festbar label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--dim);min-width:0;max-width:100%}
+.festbar select{min-width:0;max-width:100%;flex:1 1 150px;text-overflow:ellipsis}
 .foldb{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:6px;padding:0 7px;font-size:11px;cursor:pointer}
 .foldb:hover{color:var(--acc);border-color:var(--acc)}
 .foldline{font-size:12px;color:var(--dim);margin-top:5px}
@@ -221,6 +222,8 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
   .box h2 button{padding:6px 8px}
   .note{font-size:11.5px;line-height:1.5}
   .setbar{gap:6px 12px;font-size:12px}
+  .festbar label{flex:1 1 100%;min-width:0}
+  .festbar select{width:100%}
 
   /* настройки свернуты в одну строку — показать можно тапом */
   #setFold{display:flex;align-items:center;gap:4px 8px;flex-wrap:wrap;margin-bottom:3px}
@@ -428,7 +431,7 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
       <button id="syncDis" style="display:none">Отключить</button>
     </div>
     <p class="note">Ключ — как пароль: у кого он есть, тот может читать и менять ваши данные. Другу синхронизация не нужна: без ключа данные остаются локальными.</p>
-    <p class="note muted" id="syncBuild" style="font-size:11px">сборка 17.11 (1)</p>
+    <p class="note muted" id="syncBuild" style="font-size:11px">сборка 17.11 (2)</p>
     </div>
   </div>
 
