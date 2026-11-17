@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
-<!-- версия: 2026-11-17 (2) — исправлено: длинное название фестиваля («Истории Дня Независимости: Часть 4») растягивало список «Фестиваль» и страница уезжала вбок; теперь список всегда по ширине карточки, длинные названия подрезаются, а полное название видно при нажатии;
+<!-- версия: 2026-11-17 (3) — на телефоне название фестиваля теперь переносится на несколько строк и видно целиком (короткие названия — по-прежнему в одну строку); по нажатию открывается тот же список фестивалей;
+2026-11-17 (2) — исправлено: длинное название фестиваля («Истории Дня Независимости: Часть 4») растягивало список «Фестиваль» и страница уезжала вбок; теперь список всегда по ширине карточки, длинные названия подрезаются, а полное название видно при нажатии;
 2026-11-17 (1) — во вшитый набор добавлены три новых фестиваля: «Цифровой мир», «Истории Дня Независимости: Часть 4», «Разговор по душам» — всего 22 фестиваля, всё как в облаке;
 2026-11-09 (1) — из всех рецептов убрана строка «💎 игра просит» (она не заполнялась, данные в ней не потерялись — просто не показываются); значок 🗑 у рецепта теперь стоит на одной строке с названием (и на телефоне, и на компьютере); под общей суммой теперь сравнение двух вариантов сбора — с мастерской 3×4 и без неё; во вшитый набор добавлен фестиваль «Сигнал из будущего» — всего 19 фестивалей, всё как в облаке;
 2026-11-06 (1) — во вшитый набор добавлены пять новых фестивалей: «День урожая», «Парад индейки», «День роскоши», «Магия рынка», «Эпичный переезд» — всего 18 фестивалей, всё как в облаке;
@@ -139,7 +140,12 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .festbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:rgba(0,0,0,.18)}
 #btnAddRes{display:block;width:100%;margin:0 0 8px;padding:9px;font-size:14px}
 .festbar label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--dim);min-width:0;max-width:100%}
-.festbar select{min-width:0;max-width:100%;flex:1 1 150px;text-overflow:ellipsis}
+.festpick{position:relative;display:block;flex:1 1 150px;min-width:0;max-width:100%;background:#0e1a30;border:1px solid var(--line);border-radius:7px;padding:5px 26px 5px 7px}
+body.lt .festpick{background:#fff}
+.festpick::after{content:"▾";position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--dim);pointer-events:none}
+.festpick:focus-within{border-color:var(--acc)}
+.festname{display:block;font-size:13px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#festSel{position:absolute;left:0;top:0;width:100%;height:100%;margin:0;padding:0;border:0;outline:none;background:transparent;opacity:0;appearance:none;cursor:pointer}
 .foldb{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:6px;padding:0 7px;font-size:11px;cursor:pointer}
 .foldb:hover{color:var(--acc);border-color:var(--acc)}
 .foldline{font-size:12px;color:var(--dim);margin-top:5px}
@@ -223,7 +229,8 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
   .note{font-size:11.5px;line-height:1.5}
   .setbar{gap:6px 12px;font-size:12px}
   .festbar label{flex:1 1 100%;min-width:0}
-  .festbar select{width:100%}
+  .festpick{flex:1 1 100%}
+  .festname{white-space:normal;display:block;overflow-wrap:anywhere;line-height:1.25;font-size:14px}
 
   /* настройки свернуты в одну строку — показать можно тапом */
   #setFold{display:flex;align-items:center;gap:4px 8px;flex-wrap:wrap;margin-bottom:3px}
@@ -431,7 +438,7 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
       <button id="syncDis" style="display:none">Отключить</button>
     </div>
     <p class="note">Ключ — как пароль: у кого он есть, тот может читать и менять ваши данные. Другу синхронизация не нужна: без ключа данные остаются локальными.</p>
-    <p class="note muted" id="syncBuild" style="font-size:11px">сборка 17.11 (2)</p>
+    <p class="note muted" id="syncBuild" style="font-size:11px">сборка 17.11 (3)</p>
     </div>
   </div>
 
@@ -454,7 +461,10 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
     </h2>
     <div class="festbar">
       <label>Фестиваль
-        <select id="festSel" title="У каждого фестиваля свои ресурсы, цены и рецепты"></select>
+        <span class="festpick">
+          <span class="festname" id="festName"></span>
+          <select id="festSel" title="У каждого фестиваля свои ресурсы, цены и рецепты"></select>
+        </span>
       </label>
       <button class="nv" id="festAdd" title="Создать новый фестиваль с тем же набором, что сейчас">➕ новый</button>
       <button class="nv" id="festRen" title="Переименовать этот фестиваль">✏️ имя</button>
@@ -681,6 +691,8 @@ function renderFestBar(){
   if(!sel) return;
   const names = Object.keys(st.fests || {});
   sel.innerHTML = names.map(n=>`<option value="${escapeAttr(n)}"${n===st.cur?" selected":""}>${escapeAttr(n)}</option>`).join("");
+  const nm = document.getElementById("festName");
+  if(nm){ nm.textContent = st.cur || ""; nm.title = st.cur || ""; }
   const del = document.getElementById("festDel");
   if(del) del.style.display = names.length > 1 ? "" : "none";
 }
