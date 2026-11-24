@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
-<!-- версия: 2026-11-17 (3) — на телефоне название фестиваля теперь переносится на несколько строк и видно целиком (короткие названия — по-прежнему в одну строку); по нажатию открывается тот же список фестивалей;
+<!-- версия: 2026-11-24 (1) — исправлено: на компьютере выпадающий список фестивалей снова тёмный (после переделки названия он стал белым — системное меню потеряло тёмный фон); в светлой теме список остаётся светлым;
+2026-11-17 (3) — на телефоне название фестиваля теперь переносится на несколько строк и видно целиком (короткие названия — по-прежнему в одну строку); по нажатию открывается тот же список фестивалей;
 2026-11-17 (2) — исправлено: длинное название фестиваля («Истории Дня Независимости: Часть 4») растягивало список «Фестиваль» и страница уезжала вбок; теперь список всегда по ширине карточки, длинные названия подрезаются, а полное название видно при нажатии;
 2026-11-17 (1) — во вшитый набор добавлены три новых фестиваля: «Цифровой мир», «Истории Дня Независимости: Часть 4», «Разговор по душам» — всего 22 фестиваля, всё как в облаке;
 2026-11-09 (1) — из всех рецептов убрана строка «💎 игра просит» (она не заполнялась, данные в ней не потерялись — просто не показываются); значок 🗑 у рецепта теперь стоит на одной строке с названием (и на телефоне, и на компьютере); под общей суммой теперь сравнение двух вариантов сбора — с мастерской 3×4 и без неё; во вшитый набор добавлен фестиваль «Сигнал из будущего» — всего 19 фестивалей, всё как в облаке;
@@ -145,7 +146,10 @@ body.lt .festpick{background:#fff}
 .festpick::after{content:"▾";position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--dim);pointer-events:none}
 .festpick:focus-within{border-color:var(--acc)}
 .festname{display:block;font-size:13px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#festSel{position:absolute;left:0;top:0;width:100%;height:100%;margin:0;padding:0;border:0;outline:none;background:transparent;opacity:0;appearance:none;cursor:pointer}
+#festSel{position:absolute;left:0;top:0;width:100%;height:100%;margin:0;padding:0;border:0;outline:none;background:#0e1a30;color:var(--txt);color-scheme:dark;opacity:0;cursor:pointer}
+body.lt #festSel{background:#fff;color:var(--txt);color-scheme:light}
+#festSel option{background:#0e1a30;color:#e8f0ff}
+body.lt #festSel option{background:#fff;color:#16264a}
 .foldb{background:transparent;border:1px solid var(--line);color:var(--dim);border-radius:6px;padding:0 7px;font-size:11px;cursor:pointer}
 .foldb:hover{color:var(--acc);border-color:var(--acc)}
 .foldline{font-size:12px;color:var(--dim);margin-top:5px}
@@ -438,7 +442,7 @@ footer{text-align:center;color:var(--dim);font-size:11px;padding:4px 0 26px}
       <button id="syncDis" style="display:none">Отключить</button>
     </div>
     <p class="note">Ключ — как пароль: у кого он есть, тот может читать и менять ваши данные. Другу синхронизация не нужна: без ключа данные остаются локальными.</p>
-    <p class="note muted" id="syncBuild" style="font-size:11px">сборка 17.11 (3)</p>
+    <p class="note muted" id="syncBuild" style="font-size:11px">сборка 24.11 (1)</p>
     </div>
   </div>
 
